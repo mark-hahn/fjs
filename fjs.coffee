@@ -24,9 +24,13 @@ firstFunc 		= yes
 funcOut = "\n// File #{path} compiled by FJS version #{version} " +
 		  "on #{new Date().toString()[0..20]}\n\n"
 
+
 ########### compile function ############
 
 compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
+
+
+	#################### find span routines #####################
 
 	getString = (word, regex) ->
 		delim = word[0]
@@ -70,6 +74,9 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		eolRegex.exec funcSrc
 		regex.lastIndex = eolRegex.lastIndex
 
+
+	#################### emit routines #####################
+
 	out = (word, line, dbgOk = yes) ->
 		str = ''; for i in [0...depth] then str += '  '
 		str += line
@@ -82,20 +89,35 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		else
 			funcOut += str + '\n'
 
-	outFunc = (argCount, wordRegEx, exec = yes) ->
-		if debugCompile then console.log 'outFunc', {argCount, exec}
+	outFunc = (pushArgCount, wordRegEx, exec = yes, popArgCount) ->
+		if pushArgCount is '' then pushArgCount = 'Infinity'
+		if popArgCount  is '' then popArgCount  = 'Infinity'
 
-		out null, (if exec then '(' else '') + 'function(){'
+		if debugCompile then console.log 'outFunc', {pushArgCount, exec, popArgCount}
+
+		out null, 'var fjs_func = function(){'
 		depth++
-		if argCount?
-			out null, 'var fjs_args = Array.prototype.slice.call(arguments);'
-			args = ', this.popN(' + argCount + ') '
+
+		if pushArgCount?
+			out null, 'var fjs_args = (Array.prototype.slice.call('
+			out null, '    arguments, 0, (fjs_func.fjs_popArgCount || 1e9)));'
+			args = (if pushArgCount then ', this.popN(' + pushArgCount + ') ' else ' ')
 		else
 			out null, 'var fjs_args = [];'
 			args = ' '
+
 		compileFunc getFuncString wordRegEx
+
 		depth--
-		out null, (if exec then '}).apply( this' + args + ');' else '}')
+		out null, '}'
+
+		if popArgCount
+			out null, 'fjs_func.fjs_popArgCount = ' + popArgCount + ';'
+
+		if exec
+			out null, 'fjs_func.apply( this' + args + ');'
+
+	#################### emit debug routine at top of file #####################
 
 	if debugRuntime and not haveDbgInspect
 		out null, "function fjsInspect(word) {\n" +
@@ -115,22 +137,22 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		haveDbgInspect = yes
 
 
-#################### find new local vars #####################
+	#################### find new local vars #####################
 
 	localVars = {}
 
 	wordRegEx = new RegExp '\\s*(\\S+)', 'g'
 	while (matches = wordRegEx.exec funcSrc)
 		word = matches[1]
+
+		if /^\d*>\(|:?\(<\d*$/.test(word) or word in ['(', ':('] then break
+
 		if word not in ['=', '>='] and word[-1..-1] is '='
 			word = word[0..-2]
 			exists = no
 			for varSet in localVarStack ? []
-				for existingVar of varSet
-					if word is existingVar
-						exists = yes
-						break
-				if exists then break
+				if varSet[word] then exists = yes; break
+
 			if not exists then localVars[word] = yes
 
 	if debugCompile then console.log 'localVars', localVars
@@ -138,14 +160,14 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 	localVarStack.push localVars
 
 
-#################### emit function overhead #####################
+	#################### emit function overhead #####################
 
 	localVarsArr = []
 	for localVar of localVars then localVarsArr.push encodeSymbol localVar
 	if localVarsArr.length
 		out null, 'var ' + localVarsArr.join(', ') + ';'
 
-	dbgArgs = (if not firstFunc then 'fjs_args,' else 'null, ')
+	dbgArgs = (if not firstFunc then dbgArgs = 'fjs_args, ' else '[], ')
 	out null, pfx + '.funcCall( ' + debugRuntime + ', ' + dbgArgs, no
 	depth++
 
@@ -155,13 +177,14 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 	out null, 'function() {'
 	depth++
 
-	if not firstFunc then out null,  'this.pushArray(fjs_args);'
+	if not firstFunc
+		out null,  'this.pushArray(fjs_args);'
 	firstFunc = no
 
 	withStmntStack.push []
 
 
-#################### emit js code word by word #####################
+	#################### emit js code word by word #####################
 
 	wordRegEx = new RegExp '\\s*(\\S+)', 'g'
 
@@ -170,65 +193,68 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 
 		if debugCompile then console.log 'word: ', word
 
-		if word[0..4] is 'with:'
+		if word[0..1] is '//' then burnToEOL wordRegEx
+
+		else if word[0..4] is 'with:'
 			topIdx = withStmntStack.length-1
 			sym = encodeSymbol word[5..]
 			withStmntStack[topIdx].push sym
 			out null, 'with( ' + sym + ' ) {'
 			depth++
-			continue
 
-		switch word
-			when 'cb' then out word, 'this.pushCB(' + debugRuntime + ');'
+		else if word is 'cb' then out word, 'this.pushCB(' + debugRuntime + ');'
 
-			when 'wait'
-				out word, 'this.wait();'
-				for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
-#				depth--
-				out null, '}, function() {'
+		else if word is  'wait'
+			out word, 'this.wait();'
+			for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
+			depth--
+			out null, '}, function() {'
+			depth++
+			for w in  withStmntStack[withStmntStack.length-1]
+				out null, 'with( ' + encodeSymbol(w) + ' ) {'
 				depth++
-				for w in  withStmntStack[withStmntStack.length-1]
-					out null, 'with( ' + encodeSymbol(w) + ' ) {'
-					depth++
 
-			when '@'  then out word, 'this.at();'
-			when '>@' then out word, 'this.atAll();'
+		else if word is '('
+			outFunc null, wordRegEx
 
+		else if (matches = /^:\((<(\d*))?$/.exec word)
+			if matches[1]
+				outFunc null, wordRegEx, no, matches[2]
 			else
-				if word[0..1] is '//' then burnToEOL wordRegEx
+				outFunc null, wordRegEx, no
+			out word, 'this.push(fjs_func);'
 
-				else if word is '('
-					outFunc 0, wordRegEx
+		else if (matches = /^(\d*)>\(<(\d*)$/.exec word)
+			outFunc matches[1], wordRegEx, null, matches[2]
 
-				else if word is  ':('
-					out null, 'this.push('
-					depth++
-					outFunc 0, wordRegEx, no
-					depth--
-					out word, ');'
+		else if (matches = /^(\d*)>\($/.exec word)
+			outFunc matches[1], wordRegEx
 
-				else if (matches = /^(\d*)>\($/.exec word)
-					outFunc matches[1], wordRegEx
+		else if (matches = /^\(<(\d*)$/.exec word)
+			outFunc null, wordRegEx, null, matches[1]
 
-				else if word[0] in ['"',"'"]
-					str = getString word, wordRegEx
-					if word[-1..-1] isnt word[0] then word += ' ...'
-					out word, 'this.push( ' + str + ' );'
+		else if (matches = /^@(\d*)$/.exec word)
+			out word, 'this.pushOuter( ' + matches[1] + ' );'
 
-				else if word.length > 1 and word[-1..-1] is '='
-					out word, encodeSymbol(word[0..-2]) + ' = this.pop();'
+		else if word[0] in ['"',"'"]
+			str = getString word, wordRegEx
+			if word[-1..-1] isnt word[0] then word += ' ...'
+			out word, 'this.push( ' + str + ' );'
 
-				else if word[0] is ':'
-					sym = encodeSymbol word[1..]
-					out null, 'this.pushFuncOrSym( typeof ' +
-								sym + ' == "undefined" ? null : ' + sym + ', "' + sym + '");'
-					out word, ''
+		else if word.length > 1 and word[-1..-1] is '='
+			out word, encodeSymbol(word[0..-2]) + ' = this.pop();'
 
-				else if word.length > 1 and word[0] is '>'
-					out word, 'this.pushArgsAndExec( ' + encodeSymbol(word[1..]) + ' );'
+		else if word[0] is ':'
+			sym = encodeSymbol word[1..]
+			out null, 'this.pushFuncOrSym( typeof ' +
+						sym + ' == "undefined" ? null : ' + sym + ', "' + sym + '");'
+			out word, ''
 
-				else
-					out word, 'this.execOrPush( ' + encodeSymbol(word) + ' );'
+		else if word.length > 1 and word[0] is '>'
+			out word, 'this.pushArgsAndExec( ' + encodeSymbol(word[1..]) + ' );'
+
+		else
+			out word, 'this.execOrPush( ' + encodeSymbol(word) + ' );'
 
 	out ')', 'this.funcReturn();'
 	for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
@@ -244,7 +270,7 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 
 	depth--
 	out null, ');'
-	if debugRuntime then console.log 'word:  )'
+	if debugCompile then console.log 'word:  )'
 
 
 ############################ SYMBOL ENCODING ############################

@@ -2,4 +2,4 @@
 // test.fjs
 // coffee fjs.coffee test
 
-x= 1 2 3 4 rot 2>( x= ) x >.
+1 2 3 ( @1 >. @ >. ) >.
