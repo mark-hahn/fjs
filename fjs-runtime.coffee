@@ -35,9 +35,18 @@ class Context
 		items = outerStk.splice -n, n
 		@curFrame.stack = @curFrame.stack.concat items
 
-	pushArgsAndExec: (f, n) ->
+	pushArgsAndExec: (f, n, modifier) ->
+#		console.log {f, n, modifier}
+
 		n or= @curFrame.stack.length
-		res = f.apply @, @curFrame.stack.splice -n, n
+		ctxt = args = null
+		stk = @curFrame.stack
+		switch modifier
+			when '.'  then ctxt = @pop(); args = []
+			when '>.' then ctxt = @pop(); args = stk.splice -n, n
+			when '.>' then args = stk.splice -n, n; ctxt = @pop
+			else ctxt = @; args = stk.splice -n, n
+		res = f.apply ctxt, args
 		if res isnt undefined then @curFrame.stack.push res
 
 	pushArray: (array) -> @curFrame.stack = @curFrame.stack.concat array

@@ -7,7 +7,7 @@
 version = '0.0.0'
 
 debugCompile = no
-debugRuntime = yes
+debugRuntime = no
 
 fs = require 'fs'
 
@@ -81,10 +81,10 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		str = ''; for i in [0...depth] then str += '  '
 		str += line
 		if word
-			while str.length  < 50 then str += ' '
+			while str.length  < 75 then str += ' '
 			dbgStr = ''
 			if debugRuntime and dbgOk
-				dbgStr = longPad + 'fjsInspect.call(this, "' + word + '");'
+				dbgStr = longPad + 'fjsInspect.call(this, "' + word.replace(/"/g, "'") + '");'
 			funcOut += str + ' /* ' + word + ' */' + dbgStr + '\n'
 		else
 			funcOut += str + '\n'
@@ -100,7 +100,7 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 
 		if pushArgCount?
 			out null, 'var fjs_args = (Array.prototype.slice.call('
-			out null, '    arguments, 0, (fjs_func.fjs_popArgCount || 1e9)));'
+			out null, '    arguments, 0, (fjs_func.fjs_popArgCount || Infinity)));'
 			args = (if pushArgCount then ', this.popN(' + pushArgCount + ') ' else ' ')
 		else
 			out null, 'var fjs_args = [];'
@@ -127,9 +127,10 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 				  "    stk = frame.stack; stkLen = stk.length;\n" +
 				  "    for(i=0; i<stkLen; i++) {\n" +
 				  "      item = stk[i];\n" +
-				  "      stkDmp.push(item === null ? 'null' : " +
-				  "                  typeof item == 'function' ? '<function>' : \n" +
-				  "                  typeof item == 'object' ? '<object>' : item);\n" +
+				  "      stkDmp.push(item === null ? 'null' : \n" +
+				  "        typeof item == 'function' ? '<function>' : \n" +
+                  "        typeof item == 'object' && \n" +
+                  "          !(item instanceof Array) ? '<object>' : item);\n" +
 				  "    }\n" +
 				  "  }\n" +
 				  "  console.log( 'dbg: ' + word, stkDmp);\n" +
@@ -214,45 +215,70 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 				out null, 'with( ' + encodeSymbol(w) + ' ) {'
 				depth++
 
-		else if word is '('
-			outFunc null, wordRegEx
-
-		else if (matches = /^:\((<(\d*))?$/.exec word)
-			if matches[1]
-				outFunc null, wordRegEx, no, matches[2]
-			else
-				outFunc null, wordRegEx, no
-			out word, 'this.push(fjs_func);'
-
-		else if (matches = /^(\d*)>\(<(\d*)$/.exec word)
-			outFunc matches[1], wordRegEx, null, matches[2]
-
-		else if (matches = /^(\d*)>\($/.exec word)
-			outFunc matches[1], wordRegEx
-
-		else if (matches = /^\(<(\d*)$/.exec word)
-			outFunc null, wordRegEx, null, matches[1]
-
-		else if (matches = /^@(\d*)$/.exec word)
-			out word, 'this.pushOuter( ' + matches[1] + ' );'
-
+		# string constant
 		else if word[0] in ['"',"'"]
 			str = getString word, wordRegEx
-			if word[-1..-1] isnt word[0] then word += ' ...'
+			if str.length > word.length then word += ' ...'
 			out word, 'this.push( ' + str + ' );'
 
+		# var assignment, xxx=
 		else if word.length > 1 and word[-1..-1] is '='
 			out word, encodeSymbol(word[0..-2]) + ' = this.pop();'
 
+		# left paren opening function def with option modifiers, :n>(<n
+		else if (m = /^(:)?((\d*)>)?\((<(\d*))?$/.exec word)
+			[colon, gt, gtn, lt, ltn] = m[1..]
+			if debugCompile then console.log 'lftparen', {colon, gt, gtn, lt, ltn}
+			outFunc gtn, wordRegEx, not colon, ltn
+
+		# move outer stack items to inner stack, @n
+		else if (matches = /^@(\d*)$/.exec word)
+			out word, 'this.pushOuter( ' + matches[1] + ' );'
+
+		# literal string or push anonymous function, :xxx
 		else if word[0] is ':'
 			sym = encodeSymbol word[1..]
 			out null, 'this.pushFuncOrSym( typeof ' +
 						sym + ' == "undefined" ? null : ' + sym + ', "' + sym + '");'
 			out word, ''
 
-		else if word.length > 1 and word[0] is '>'
-			out word, 'this.pushArgsAndExec( ' + encodeSymbol(word[1..]) + ' );'
+#		else if word.indexOf('.') isnt -1
 
+
+		# gt and/or dot modifier to var or function, .n>xxx or n>.xxx
+		else if (m = /^((\.)?((\d*)>)?|^((\d*)>)?(\.)?)([^\s]+)/.exec word)
+			[haveMod, dotgt_dot, dotgt_gt,  dotgt_gtn,
+			          gtdot_gt,  gtdot_gtn, gtdot_dot, rest] = m[1..]
+
+			if debugCompile then console.log 'gt and/or dot', {
+				dotgt_dot, dotgt_gt,  dotgt_gtn,
+				gtdot_gt,  gtdot_gtn, gtdot_dot, rest, haveMod
+			}
+
+			if not haveMod
+				out word, 'this.execOrPush( ' + encodeSymbol(word) + ' );'
+				continue
+
+			if dotgt_dot or gtdot_dot then dotPfx = ', @pop()'
+
+			n = mod = null
+
+			if dotgt_dot or dotgt_gt
+				n = +dotgt_gtn
+				mod = ''
+				if dotgt_dot then mod += '.'
+				if dotgt_gt  then mod += '>'
+
+			if gtdot_gt or gtdot_dot
+				n = +gtdot_gtn
+				mod = ''
+				if gtdot_gt  then mod += '>'
+				if gtdot_dot then mod += '.'
+
+			out word, 'this.pushArgsAndExec( ' +
+						encodeSymbol(rest) + ', ' + n + ', "' + mod + dotPfx + '" );'
+
+		# plain var or function
 		else
 			out word, 'this.execOrPush( ' + encodeSymbol(word) + ' );'
 
@@ -295,6 +321,7 @@ wordBySym = _throw_: 'throw', _if_: 'if', _while_: 'while',  _dot_: '.'
 
 encodeSymbol = (str) ->
 	if str.length is 0 then return str
+	if str[0] is '`'   then return str[1..]
 	if str of symByWord then return symByWord[str];
 	out = '';
 	for char in str
