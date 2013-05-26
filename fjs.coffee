@@ -242,45 +242,39 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 						sym + ' == "undefined" ? null : ' + sym + ', "' + sym + '");'
 			out word, ''
 
-#		else if word.indexOf('.') isnt -1
+		# gt and/or dot modifier to var or function, n>.xxx
+		else if (m = /^(((\d*)>)?(\.)?)([^\s]+)/.exec word)
+			[mod, gt, gtn, dot, rest] = m[1..]
+			if debugCompile then console.log 'gt_and/or_dot', {gt,  gtn, dot, rest, mod}
 
-
-		# gt and/or dot modifier to var or function, .n>xxx or n>.xxx
-		else if (m = /^((\.)?((\d*)>)?|^((\d*)>)?(\.)?)([^\s]+)/.exec word)
-			[haveMod, dotgt_dot, dotgt_gt,  dotgt_gtn,
-			          gtdot_gt,  gtdot_gtn, gtdot_dot, rest] = m[1..]
-
-			if debugCompile then console.log 'gt and/or dot', {
-				dotgt_dot, dotgt_gt,  dotgt_gtn,
-				gtdot_gt,  gtdot_gtn, gtdot_dot, rest, haveMod
-			}
-
-			if not haveMod
+			if not mod
 				out word, 'this.execOrPush( ' + encodeSymbol(word) + ' );'
 				continue
 
-			if dotgt_dot or gtdot_dot then dotPfx = ', @pop()'
+			sym = encodeSymbol rest
 
-			n = mod = null
+			if dot
+				out null, 'fjs_ctxtObj = this.pop();'
+				out null, 'fjs_val = fjs_ctxtObj.' + sym + ';'
 
-			if dotgt_dot or dotgt_gt
-				n = +dotgt_gtn
-				mod = ''
-				if dotgt_dot then mod += '.'
-				if dotgt_gt  then mod += '>'
+				if gtn
+					out null, 'args = this.stack().splice(-' + gtn + ', ' + gtn + ')'
+					out null, 'if(typeof fjs_val == "function")'
+					out null, '  fjs_val = fjs_val.apply(fjs_ctxtObj, args);'
+				else if gt
+					out null, 'if(typeof fjs_val == "function")'
+					out null, '  fjs_val = fjs_val.apply(fjs_ctxtObj, this.popAll());'
+				else
+					out null, 'if(typeof fjs_val == "function")'
+					out null, '  fjs_val = fjs_val.call(fjs_ctxtObj);'
 
-			if gtdot_gt or gtdot_dot
-				n = +gtdot_gtn
-				mod = ''
-				if gtdot_gt  then mod += '>'
-				if gtdot_dot then mod += '.'
-
-			out word, 'this.pushArgsAndExec( ' +
-						encodeSymbol(rest) + ', ' + n + ', "' + mod + dotPfx + '" );'
+				out word, 'if(fjs_val != undefined) this.push(fjs_val);'
+			else
+				out word, 'this.pushArgsAndExec( ' + sym + ', ' + (gtn or 'null') + ' );'
 
 		# plain var or function
 		else
-			out word, 'this.execOrPush( ' + encodeSymbol(word) + ' );'
+			out sym, 'this.execOrPush( ' + encodeSymbol(sym) + ' );'
 
 	out ')', 'this.funcReturn();'
 	for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
@@ -321,8 +315,17 @@ wordBySym = _throw_: 'throw', _if_: 'if', _while_: 'while',  _dot_: '.'
 
 encodeSymbol = (str) ->
 	if str.length is 0 then return str
-	if str[0] is '`'   then return str[1..]
+
+#	if not str[0] is '.' and str.indexOf('.') isnt -1
+#		words = str.split '.'
+#		strs = []
+#		for seg in words then if seg.length then strs.push encodeSymbol(seg)
+#		str = strs.join '.'
+
+	if str[0] is '`' then return str[1..]
+
 	if str of symByWord then return symByWord[str];
+
 	out = '';
 	for char in str
 		if (name = nameByChar[char]) then out += '_' + name + '_'
@@ -338,10 +341,10 @@ decodeSymbol = (str) ->
 	str
 
 
-########################## START ###########################
+########################## EXECUTE COMPILER ###########################
 
 src = "'./fjs-primitives' >require fjs-primitives= with:fjs-primitives \n\n" +
-	  fs.readFileSync(path + '.fjs').toString()
+	  	fs.readFileSync(path + '.fjs').toString()
 
 compileFunc src, "require('./fjs-runtime')"
 
