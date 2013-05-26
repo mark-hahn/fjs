@@ -1,0 +1,5 @@
+
+// test.fjs
+// coffee fjs.coffee test
+
+ 1 2 3 4 rot 2>( >. ) >.
