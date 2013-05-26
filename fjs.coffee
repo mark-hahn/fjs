@@ -6,7 +6,7 @@
 
 version = '0.0.0'
 
-debugCompile = yes
+debugCompile = no
 debugRuntime = yes
 
 fs = require 'fs'
@@ -14,8 +14,10 @@ fs = require 'fs'
 path = process.argv[2]
 longPad = ''; for i in [0..25] then longPad += '     '
 
-depth 			= 0
 withStmntStack 	= []
+localVarStack   = []
+
+depth 			= 0
 haveDbgInspect 	= no
 firstFunc 		= yes
 
@@ -113,12 +115,35 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		haveDbgInspect = yes
 
 
-#################### emit js code word by word #####################
+#################### find new local vars #####################
 
-	# TODO local vars list
-	localVars = []
+	localVars = {}
 
-	if localVars.length then out null, localVars.join(',') + ';'
+	wordRegEx = new RegExp '\\s*(\\S+)', 'g'
+	while (matches = wordRegEx.exec funcSrc)
+		word = matches[1]
+		if word not in ['=', '>='] and word[-1..-1] is '='
+			word = word[0..-2]
+			exists = no
+			for varSet in localVarStack ? []
+				for existingVar of varSet
+					if word is existingVar
+						exists = yes
+						break
+				if exists then break
+			if not exists then localVars[word] = yes
+
+	if debugCompile then console.log 'localVars', localVars
+
+	localVarStack.push localVars
+
+
+#################### emit function overhead #####################
+
+	localVarsArr = []
+	for localVar of localVars then localVarsArr.push encodeSymbol localVar
+	if localVarsArr.length
+		out null, 'var ' + localVarsArr.join(', ') + ';'
 
 	dbgArgs = (if not firstFunc then 'fjs_args,' else 'null, ')
 	out null, pfx + '.funcCall( ' + debugRuntime + ', ' + dbgArgs, no
@@ -130,13 +155,15 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 	out null, 'function() {'
 	depth++
 
-	if not firstFunc
-		out null,  'this.pushArray(fjs_args);'
+	if not firstFunc then out null,  'this.pushArray(fjs_args);'
 	firstFunc = no
 
-	wordRegEx = new RegExp '\\s*(\\S+)', 'g'
-
 	withStmntStack.push []
+
+
+#################### emit js code word by word #####################
+
+	wordRegEx = new RegExp '\\s*(\\S+)', 'g'
 
 	while (matches = wordRegEx.exec funcSrc)
 		word = matches[1]
@@ -212,7 +239,8 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 	depth--
 	out null, ']'
 
-	withStmntStack.pop();
+	withStmntStack.pop()
+	localVarStack.pop()
 
 	depth--
 	out null, ');'
