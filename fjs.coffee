@@ -308,9 +308,9 @@ charByName =
 	'gt'    : '>', 'qmark' : '?', 'at'    : '@', 'lbkt'  : '[', 'bslsh' : '\\','rbkt'  : ']'
 	'caret' : '^', 'btick' : '`', 'lbrace': '{', 'pipe'  : '|', 'rbrace': '}', 'tilda' : '~'
 
-symByWord =  throw: '_throw_', if: '_if_', while: '_while_', '.': '_dot_'
+symByWord =  throw: '_throw_', if: '_if_', while: '_while_', '.': '_dot_', new: '_new_'
 
-wordBySym = _throw_: 'throw', _if_: 'if', _while_: 'while',  _dot_: '.'
+wordBySym = _throw_: 'throw', _if_: 'if', _while_: 'while',  _dot_: '.', _new_: 'new'
 
 encodeSymbol = (str) ->
 	if str.length is 0 then return str

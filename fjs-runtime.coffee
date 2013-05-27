@@ -35,6 +35,13 @@ class Context
 		items = outerStk.splice -n, n
 		@curFrame.stack = @curFrame.stack.concat items
 
+	new: (Class, args) ->
+		(->
+			construct = -> Class.apply this, args
+			construct.prototype = Class.prototype
+			new construct
+		)()
+
 	pushArgsAndExec: (f, n) ->
 		n or= @curFrame.stack.length
 		res = f.apply @, @curFrame.stack.splice -n, n
