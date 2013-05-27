@@ -2,4 +2,16 @@
 // test.fjs
 // coffee fjs.coffee test
 
-1 2 3 :Array >new
+// var http = require('http');
+// http.createServer(function (req, res) {
+//   res.writeHead(200, {'Content-Type': 'text/plain'});
+//   res.end('Hello World\n');
+// }).listen(1337, '127.0.0.1');
+// console.log('Server running at http://127.0.0.1:1337/');
+
+
+cb 'http' 1>require >.createServer dup wait dup
+  200 {'Content-Type':'text/plain'} rot 2>.writeHead
+  'Hello World\n' swap 1>.end
+1337 '127.0.0.1' rot >listen
+'Server running at http://127.0.0.1:1337/' .
