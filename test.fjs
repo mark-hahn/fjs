@@ -2,4 +2,4 @@
 // test.fjs
 // coffee fjs.coffee test
 
-1 2 3 `[1,2] dup . .length .
+`[1,2][1]*2 .

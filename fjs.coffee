@@ -7,7 +7,7 @@
 version = '0.0.0'
 
 debugCompile = no
-debugRuntime = no
+debugRuntime = yes
 
 fs = require 'fs'
 
@@ -257,15 +257,14 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 				out null, 'fjs_ctxtObj = this.pop();'
 				out null, 'fjs_val = fjs_ctxtObj.' + sym + ';'
 
+				if gtn then out null, 'args = this.stack().splice(-' + gtn + ', ' + gtn + ')'
+				out null, 'if(typeof fjs_val == "function")'
+
 				if gtn
-					out null, 'args = this.stack().splice(-' + gtn + ', ' + gtn + ')'
-					out null, 'if(typeof fjs_val == "function")'
 					out null, '  fjs_val = fjs_val.apply(fjs_ctxtObj, args);'
 				else if gt
-					out null, 'if(typeof fjs_val == "function")'
 					out null, '  fjs_val = fjs_val.apply(fjs_ctxtObj, this.popAll());'
 				else
-					out null, 'if(typeof fjs_val == "function")'
 					out null, '  fjs_val = fjs_val.call(fjs_ctxtObj);'
 
 				out word, 'if(fjs_val != undefined) this.push(fjs_val);'
