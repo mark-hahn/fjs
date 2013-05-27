@@ -7,17 +7,20 @@
 # a fjs function (@codeFuncSegs array) invocation
 # includes execution ptr (@segIdx) and datastack (@stack)
 class Frame
-	constructor: ( @codeFuncSegs ) ->
-		@segIdx = 0
-		@stack  = []
+	constructor: ( @codeFuncSegs, @segIdx = 0, @stack = [] ) ->
+
+	clone: -> new Frame @codeFuncSegs, @segIdx, @stack.slice 0
 
 # execution engine
 class Context
 
-	constructor: ->
+	constructor: (@curFrame = null) ->
 		@frames = []
-		@curFrame = null
 		@callbacksPending = 0
+
+	clone: ->
+		newCtxt = new Context @curFrame.clone()
+		newCtxt
 
 	stack: -> @curFrame.stack
 
@@ -57,21 +60,24 @@ class Context
 		res = if typeof v is 'function' then v.call @ else v
 		if res isnt undefined then @curFrame.stack.push res
 
-	pushCB: (debug) ->
-		@curFrame.stack.push @_callback.bind @, debug
+	pushCB: (debugFunc) ->
+		@curFrame.stack.push @_callback.bind @, debugFunc
 		@callbacksPending++
 
-	_callback: (debug, args...) ->
-		@curFrame.stack = @curFrame.stack.concat args
-		if debug then console.log 'dbg: <callback>               ', @curFrame.stack
-		--@callbacksPending
-		if @callbacksPending is 0 then @_run()
-		#  else if @callbacksPending < 0 then clone(@)._run()   # clone with prototype
+	_callback: (debugFunc, args...) ->
+		if --@callbacksPending > 0 then return
+		ctxt = (if @callbacksPending is 0 then @ else ctxt = @savedCtxt)
+		@savedCtxt = ctxt.clone()
+		ctxt.curFrame.stack = ctxt.curFrame.stack.concat args
+		if debugFunc
+			console.log()
+			debugFunc.call ctxt, '<callback>'
+		ctxt._run()
 
-	funcCall: (debug, dbgArgs, segments) ->
+	funcCall: (debugFunc, dbgArgs, segments) ->
 		@frames.push @curFrame
 		@curFrame = new Frame segments
-		if debug then console.log "dbg: (                        ", dbgArgs
+		if debugFunc then debugFunc.call @, '('
 		@_run()
 
 	_run: (args) ->

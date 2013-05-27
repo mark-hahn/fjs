@@ -23,7 +23,7 @@ firstFunc 		= yes
 
 funcOut = "\n// File #{path} compiled by FJS version #{version} " +
 		  "on #{new Date().toString()[0..20]}\n\n"
-
+#		  "fjs_keepAlive = setInterval(function(){}, 1e9);\n\n"
 
 ########### compile function ############
 
@@ -120,20 +120,26 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 	#################### emit debug routine at top of file #####################
 
 	if debugRuntime and not haveDbgInspect
-		out null, "function fjsInspect(word) {\n" +
-				  "  while(word.length < 25) word += ' ';\n" +
-				  "  stkDmp = []; frame = this.curFrame;\n" +
-				  "  if(frame) {\n" +
-				  "    stk = frame.stack; stkLen = stk.length;\n" +
-				  "    for(i=0; i<stkLen; i++) {\n" +
-				  "      item = stk[i];\n" +
-				  "      stkDmp.push(item === null ? 'null' : \n" +
-				  "        typeof item == 'function' ? '<function>' : \n" +
-                  "        typeof item == 'object' && \n" +
-                  "          !(item instanceof Array) ? '<object>' : item);\n" +
+		out null, "function fjsInspect(fjs_word) {\n" +
+				  "  while(fjs_word.length < 25) fjs_word += ' ';\n" +
+				  "  fjs_stkDmp = []; fjs_frame = this.curFrame;\n" +
+				  "  if(fjs_frame) {\n" +
+				  "    fjs_stk = fjs_frame.stack; fjs_stkLen = fjs_stk.length;\n" +
+				  "    for(fjs_i=0; fjs_i<fjs_stkLen; fjs_i++) {\n" +
+				  "      fjs_item = fjs_stk[fjs_i];\n" +
+				  "      fjs_stkDmp.push(\n" +
+				  "        fjs_item === null ? 'null' : \n" +
+		          "        typeof fjs_item == 'string'  ? '\"'+fjs_item+'\"'          : \n" +
+				  "        fjs_item instanceof Function ? 'function'                  : \n" +
+		          "        fjs_item instanceof Number   ?  fjs_item.toString()        : \n" +
+		          "        fjs_item instanceof Array    ? '['+fjs_item.toString()+']' : \n" +
+		          "        fjs_item instanceof Boolean  ? fjs_item.toString()         : \n" +
+				  "        (fjs_m = /^function\\s(.*?)\\(/.exec(fjs_item.constructor)) ? fjs_m[1] :\n" +
+				  "        fjs_item.toString()\n" +
+				  "      );\n" +
 				  "    }\n" +
 				  "  }\n" +
-				  "  console.log( 'dbg: ' + word, stkDmp);\n" +
+				  "  console.log( 'dbg: ' + fjs_word, fjs_stkDmp.join(', '));\n" +
 				  "}\n"
 		haveDbgInspect = yes
 
@@ -169,7 +175,8 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		out null, 'var ' + localVarsArr.join(', ') + ';'
 
 	dbgArgs = (if not firstFunc then dbgArgs = 'fjs_args, ' else '[], ')
-	out null, pfx + '.funcCall( ' + debugRuntime + ', ' + dbgArgs, no
+	out null, pfx + '.funcCall( ' + (if debugRuntime then 'fjsInspect' else 'null') + ', ' +
+								dbgArgs, no
 	depth++
 
 	out null, '['
@@ -203,7 +210,8 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 			out null, 'with( ' + sym + ' ) {'
 			depth++
 
-		else if word is 'cb' then out word, 'this.pushCB(' + debugRuntime + ');'
+		else if word is 'cb' then out word, 'this.pushCB(' +
+				(if debugRuntime then 'fjsInspect' else 'null') + ');'
 
 		else if word is  'wait'
 			out word, 'this.wait();'
