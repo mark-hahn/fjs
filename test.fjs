@@ -1,19 +1,15 @@
 
-// test.fjs
-// coffee fjs.coffee test
+// Standard http server example from Node
 
-// var http = require('http');
-// http.createServer(function (req, res) {
-//   res.writeHead(200, {'Content-Type': 'text/plain'});
-//   res.end('Hello World\n');
-// }).listen(1337, '127.0.0.1');
-// console.log('Server running at http://127.0.0.1:1337/');
+//   var http = require('http');
+//   http.createServer(function (req, res) {
+//     res.writeHead(200, {'Content-Type': 'text/plain'});
+//     res.end('Hello World\n');
+//   }).listen(1337, '127.0.0.1');
+//   console.log('Server running at http://127.0.0.1:1337/');
 
-0 i=
-cb 'http' 1>require >.createServer
-1337 '127.0.0.1' rot 2>.listen drop
-'Server running at http://127.0.0.1:1337/' . wait swap drop dup
-  200 `{'Content-Type':'text/plain'} rot 2>.writeHead
-  'Hello World ' `i++ 2>+ swap 1>.end
-
-
+     cb 'http' 1>require >.createServer
+     1337 '127.0.0.1' rot 2>.listen drop
+     'Server running at http://127.0.0.1:1337/' . wait swap drop dup
+       200 `{'Content-Type':'text/plain'} rot 2>.writeHead
+       'Hello World ' swap 1>.end
