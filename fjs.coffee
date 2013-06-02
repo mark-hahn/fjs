@@ -115,7 +115,9 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 			out null, 'fjs_func.fjs_popArgCount = ' + popArgCount + ';'
 
 		if exec
-			out null, 'fjs_func.apply( this' + args + ');'
+			out '()', 'fjs_func.apply( this' + args + ');'
+		else
+			out null, 'this.push( fjs_func );'
 
 	#################### emit debug routine at top of file #####################
 
@@ -129,9 +131,9 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 				  "      fjs_item = fjs_stk[fjs_i];\n" +
 				  "      fjs_stkDmp.push(\n" +
 				  "        fjs_item === null ? 'null' : \n" +
-		          "        typeof fjs_item == 'string'  ? '\"'+fjs_item+'\"'          : \n" +
+				  "        typeof fjs_item == 'string'  ? '\"'+fjs_item+'\"'          : \n" +
+		          "        typeof fjs_item == 'number'  ?  fjs_item                   : \n" +
 				  "        fjs_item instanceof Function ? 'function'                  : \n" +
-		          "        fjs_item instanceof Number   ?  fjs_item.toString()        : \n" +
 		          "        fjs_item instanceof Array    ? '['+fjs_item.toString()+']' : \n" +
 		          "        fjs_item instanceof Boolean  ? fjs_item.toString()         : \n" +
 				  "        (fjs_m = /^function\\s(.*?)\\(/.exec(fjs_item.constructor)) ? fjs_m[1] :\n" +
@@ -208,6 +210,16 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 			sym = encodeSymbol word[5..]
 			withStmntStack[topIdx].push sym
 			out null, 'with( ' + sym + ' ) {'
+			depth++
+
+		else if word[0..6] is 'typeof:'
+			sym = encodeSymbol word[7..]
+			out word, 'this.push( typeof ' + sym + ' );'
+			depth++
+
+		else if word[0..10] is 'instanceof:'
+			sym = encodeSymbol word[11..]
+			out word, 'this.push( this.pop() instanceof ' + sym + ' );'
 			depth++
 
 		else if word is 'cb' then out word, 'this.pushCB(' +
