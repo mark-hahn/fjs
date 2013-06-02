@@ -1,6 +1,91 @@
 
-// -------- Standard http server example from Node --------
+// -------- Examples from the docs --------
 
+"\nFrom the *Hello World* section" . >drop
+    'Hello World' .
+
+"\nFrom the *Comments* section" . >drop
+    1 1 + .  // prints "2" on stdout
+    1 1 * .  // prints "1" on stdout
+
+"\nFrom the *Named Variables* section" . >drop
+    3 x= x .		// prints "3"
+
+"\nFrom the *Functions* section" . >drop
+     ( "hello world" . )                  // creates and runs function, prints "hello world"
+    :( "hello world" . ) printGreeting=	  // creates function and assigns it to a variable
+    printGreeting						  // runs function, prints "hello world"
+
+"\nFrom the *Word Modifers* section" . >drop
+    1 3 2    Math.min . // prints "Infinity" (Math.min())   Leaves 3 items on stack
+    1 3 2   >Math.max .	// prints "3" (Math.max(1, 3, 2))   Leaves empty stack
+    1 3 2  2>Math.min .	// prints "2" (Math.min(3, 2))      Leaves 1 item on stack
+    1 3 2  2>( >. )     // prints "3 2"                     Leaves 1 item on stack
+
+"\nFrom the *Word Modifers* section" . >drop
+    1 3 2 Math   .min . // prints "Infinity" (Math.min())
+    1 3 2 Math  >.max .	// prints "3" (Math.max(1, 3, 2))   Leaves empty stack
+    1 3 2 Math 2>.min .	// prints "2" (Math.min(3, 2))      Leaves 1 item on stack
+
+"\nFrom the *Word Modifers* section" . >drop
+	1 x=  x .		// prints "1"
+	1 x= :x .		// prints "x"
+	 Math.min .		// prints "Infinity"
+	:Math.min .		// prints "[Function: min]"
+	 ( 1 2 + ) .	// prints "3"
+	:( 1 2 + ) .	// prints "[Function]"
+
+"\nFrom the *Multiple Stacks* section" . >drop
+    1 3 2 ( @2 >Math.min . ) // prints "2" and leaves one item on stack
+    1 3 2 ( @ . @ . @ . )	 // prints "2", then "3", then "1"
+    1 3 2 ( @3 >. )          // prints "1 3 2"
+
+"\nFrom the *Multiple Stacks* section" . >drop
+    :(<2 >. ) print2=	 // defines a function and assigns it to a variable
+    1 3 2 >print2        // prints "3 2" and leaves one item on the stack
+
+"\nFrom the *Multiple Stacks* section" . >drop
+    1 3 2 >(< >. )   // prints "1 3 2" by using function arguments
+
+"\nFrom the *Function Results* section" . >drop
+    ( 1 3 2 )   >.		// prints "1 3 2"
+    ( 1 3 2 + ) >.		// prints "1 5"
+    ( 1 3 2 + ) + .		// prints "6"
+
+"\nFrom the *Named Variable Scopes* section" . >drop
+	1 x=		// assign 1 to x
+	( 2 y= )	// anonymous function executed with var y in local scope
+	typeof:y .	// prints "undefined"
+	( 3 x= )  	// var x is from outer scope
+	x .			// prints 3
+
+"\nFrom the *Async Execution* section" . >drop
+	'fs' >require fs=		// load the fs module and assing it to the fs variable.
+    'fjs.bat' 'utf8' cb >fs.readFile 'hello world' . wait >.
+    						// this prints "hello world" and then the error code and contents
+
+"\nFrom the *Primitve Words* section" . >drop
+    './fjs-primitives' >require fjs-primitives=
+    with:fjs-primitives
+
+"\nFrom the *Modules* section" . >drop
+    'fs' >require fs=				// load module and save it in fs var
+    'hello world' fs.writefileSync	// use fs as the namespace for write
+
+"\nFrom the *Modules* section" . >drop
+   (<1 1 + ) exports.increment=	// The `increment` function is exported
+
+"\nFrom the *Embedding Javascript Code* section" . >drop
+    `x = 1 + 1` .		// assigns 2 to x and prints "2"
+    `{a:1, b:2}` obj=	// assigns a constant object to the variable obj
+
+"\nFrom the *Special Operator Prefixes* section" . >drop
+	undefined x=                // prepare for test
+	`{x:1}` obj=		    	// assign object to var obj
+    ( with:obj x . )			// prints 1 (with goes to end of function
+    typeof:x .					// prints "undefined"
+
+// -------- Standard Javascript http server example from Node --------
 //   var http = require('http');
 //   http.createServer(function (req, res) {
 //     res.writeHead(200, {'Content-Type': 'text/plain'});
@@ -8,70 +93,11 @@
 //   }).listen(1337, '127.0.0.1');
 //   console.log('Server running at http://127.0.0.1:1337/');
 
-//   cb 'http' 1>require >.createServer
-//   1337 '127.0.0.1' rot 2>.listen drop
-//   'Server running at http://127.0.0.1:1337/' . wait swap drop dup
-//     200 `{'Content-Type':'text/plain'} rot 2>.writeHead
-//     'Hello World ' swap 1>.end
+"\nFJS version of http server example" . >drop
+	cb 'http' 1>require >.createServer
+	1337 '127.0.0.1' rot 2>.listen drop
+	'Server running at http://127.0.0.1:1337/' . wait swap drop dup
+	  200 `{'Content-Type':'text/plain'}` rot 2>.writeHead
+	  'Hello World' swap 1>.end
 
-
-// -------- Examples from the docs --------
-
-//  'Hello World' .
-
-// -- from *Comments* section
-//  1 1 + .  // prints "2" on stdout
-//  1 1 * .  // prints "1" on stdout
-
-// -- from *Named Variables* section
-    3 x= x .
-
-// -- from *Functions* section
-//   ( "hello world" . )                  // creates and runs function, prints "hello world"
-//  :( "hello world" . ) printGreeting=	  // creates function and assigns it to a variable
-//  printGreeting						  // runs function, prints "hello world"
-
-// -- from *Word Modifers* section
-//  1 3 2    Math.min . // Prints "Infinity" (Math.min())   Leaves 3 items on stack
-//  1 3 2   >Math.max .	// Prints "3" (Math.max(1, 3, 2))   Leaves empty stack
-//  1 3 2  2>Math.min .	// Prints "2" (Math.min(3, 2))      Leaves 1 item on stack
-//  1 3 2  2>( >. )     // Prints "3 2"                     Leaves 1 item on stack
-
-// -- from *Word Modifers* section
-//  1 3 2 Math   .min . // Prints "Infinity" (Math.min())
-//  1 3 2 Math  >.max .	// Prints "3" (Math.max(1, 3, 2))   Leaves empty stack
-//  1 3 2 Math 2>.min .	// Prints "2" (Math.min(3, 2))      Leaves 1 item on stack
-
-// -- from *Word Modifers* section
-//	1 x=  x .		// prints "1"
-//	1 x= :x .		// prints "x"
-//	 Math.min .		// prints "Infinity"
-//	:Math.min .		// prints "[Function: min]"
-//	 ( 1 2 + ) .	// prints "3"
-//	:( 1 2 + ) .	// prints "[Function]"
-
-// -- from *Multiple Stacks* section
-//	1 3 2 ( @2 >Math.min . ) // prints "2" and leaves one item on stack
-//	1 3 2 ( @ . @ . @ . )	 // prints "2", then "3", then "1"
-//	1 3 2 ( @3 >. )          // prints "1 3 2"
-
-// -- from *Multiple Stacks* section
-    :(<2 >. ) print2=	   	// defines a function and assigns it to a variable
-    1 3 2 >print2           // prints "3 2" and leaves one item on the stack
-
-// -- from *Multiple Stacks* section
-    1 3 2 >(< >. )   		// prints "1 3 2" by using function arguments
-
-// -- from *Named Variable Scopes* section
-	1 x=		// assign 1 to x
-	( 2 y= )	// anonymous function executed with var y in local scope
-	typeof:y .	// prints "undefined"
-	( 3 x= )  	// var x is from outer scope
-	x .			// prints 3
-
-// -- from *Special Operator Prefixes* section
-	`{x:1} obj=		    		// assign object to var obj
-    ( with:obj x . )			// prints 1 (with goes to end of function
-    typeof:x .					// prints "undefined"
-    :abc instanceof:string .	// prints "true"
 

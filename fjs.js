@@ -12,7 +12,7 @@
 
   debugCompile = false;
 
-  debugRuntime = true;
+  debugRuntime = false;
 
   fs = require('fs');
 
@@ -37,7 +37,7 @@
   funcOut = ("\n// File " + path + " compiled by FJS version " + version + " ") + ("on " + (new Date().toString().slice(0, 21)) + "\n\n");
 
   compileFunc = function(funcSrc, pfx, argCount) {
-    var burnToEOL, colon, dbgArgs, dot, exists, getFuncString, getString, gt, gtn, localVar, localVars, localVarsArr, lt, ltn, m, matches, mod, out, outFunc, rest, str, sym, topIdx, varSet, w, word, wordRegEx, _j, _k, _l, _len, _len1, _len2, _len3, _m, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
+    var burnToEOL, colon, dbgArgs, dot, exists, getFuncString, getJsString, getString, gt, gtn, localVar, localVars, localVarsArr, lt, ltn, m, matches, mod, out, outFunc, rest, str, sym, topIdx, varSet, w, word, wordRegEx, _j, _k, _l, _len, _len1, _len2, _len3, _m, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
 
     if (pfx == null) {
       pfx = 'this';
@@ -67,6 +67,28 @@
         i++;
       }
       throw new Exception('Unterminated string');
+    };
+    getJsString = function(word, regex) {
+      var chr0, chr1, out, _ref;
+
+      out = "";
+      i = regex.lastIndex - word.length + 1;
+      while (i < funcSrc.length) {
+        chr0 = funcSrc[i];
+        chr1 = (_ref = funcSrc[i + 1]) != null ? _ref : ' ';
+        if (chr0 === '\\') {
+          out += chr0 + chr1;
+          i += 2;
+          continue;
+        }
+        if (chr0 === "`" && /\s/.test(chr1)) {
+          regex.lastIndex = i + 1;
+          return out;
+        }
+        out += chr0;
+        i++;
+      }
+      throw new Exception('Unterminated backtick string');
     };
     getFuncString = function(regex) {
       var chr0, chr1, chr2, out, _ref, _ref1;
@@ -135,13 +157,6 @@
       if (popArgCount === '') {
         popArgCount = 'Infinity';
       }
-      if (debugCompile) {
-        console.log('outFunc', {
-          pushArgCount: pushArgCount,
-          exec: exec,
-          popArgCount: popArgCount
-        });
-      }
       out(null, 'var fjs_func = function(){');
       depth++;
       if (pushArgCount != null) {
@@ -190,9 +205,6 @@
           localVars[word] = true;
         }
       }
-    }
-    if (debugCompile) {
-      console.log('localVars', localVars);
     }
     localVarStack.push(localVars);
     localVarsArr = [];
@@ -261,19 +273,16 @@
           word += ' ...';
         }
         out(word, 'this.push( ' + str + ' );');
+      } else if (word[0] === "`") {
+        str = getJsString(word, wordRegEx);
+        if (str.length > word.length) {
+          word += ' ...';
+        }
+        out(word, 'this.push( ' + str + ' );');
       } else if (word.length > 1 && word.slice(-1) === '=') {
         out(word, encodeSymbol(word.slice(0, -1)) + ' = this.pop();');
       } else if ((m = /^(:)?((\d*)>)?\((<(\d*))?$/.exec(word))) {
         _ref4 = m.slice(1), colon = _ref4[0], gt = _ref4[1], gtn = _ref4[2], lt = _ref4[3], ltn = _ref4[4];
-        if (debugCompile) {
-          console.log('lftparen', {
-            colon: colon,
-            gt: gt,
-            gtn: gtn,
-            lt: lt,
-            ltn: ltn
-          });
-        }
         outFunc(gtn, wordRegEx, !colon, ltn);
       } else if ((matches = /^@(\d*)$/.exec(word))) {
         out(word, 'this.pushOuter( ' + matches[1] + ' );');
@@ -283,15 +292,6 @@
         out(word, '');
       } else if ((m = /^(((\d*)>)?(\.)?)([^\s]+)/.exec(word))) {
         _ref5 = m.slice(1), mod = _ref5[0], gt = _ref5[1], gtn = _ref5[2], dot = _ref5[3], rest = _ref5[4];
-        if (debugCompile) {
-          console.log('gt_and/or_dot', {
-            gt: gt,
-            gtn: gtn,
-            dot: dot,
-            rest: rest,
-            mod: mod
-          });
-        }
         if (!mod) {
           out(word, 'this.execOrPush( ' + encodeSymbol(word) + ' );');
           continue;
@@ -439,6 +439,9 @@
       } else {
         out += char;
       }
+    }
+    if (isNaN(out) && /^\d/.test(out)) {
+      out = '_num_' + out;
     }
     return out;
   };

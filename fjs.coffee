@@ -7,7 +7,7 @@
 version = '0.0.0'
 
 debugCompile = no
-debugRuntime = yes
+debugRuntime = no
 
 fs = require 'fs'
 
@@ -49,6 +49,23 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 				return out
 			i++
 		throw new Exception 'Unterminated string'
+
+	getJsString = (word, regex) ->
+		out = ""
+		i = regex.lastIndex - word.length + 1
+		while i < funcSrc.length
+			chr0 = funcSrc[i]
+			chr1 = funcSrc[i+1] ? ' '
+			if chr0 is '\\'
+				out += chr0 + chr1
+				i += 2
+				continue
+			if chr0 is "`" and /\s/.test chr1
+				regex.lastIndex = i + 1
+				return out
+			out += chr0
+			i++
+		throw new Exception 'Unterminated backtick string'
 
 	getFuncString = (regex) ->
 		out = ''
@@ -93,7 +110,7 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		if pushArgCount is '' then pushArgCount = 'Infinity'
 		if popArgCount  is '' then popArgCount  = 'Infinity'
 
-		if debugCompile then console.log 'outFunc', {pushArgCount, exec, popArgCount}
+#		if debugCompile then console.log 'outFunc', {pushArgCount, exec, popArgCount}
 
 		out null, 'var fjs_func = function(){'
 		depth++
@@ -164,7 +181,7 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 
 			if not exists then localVars[word] = yes
 
-	if debugCompile then console.log 'localVars', localVars
+#	if debugCompile then console.log 'localVars', localVars
 
 	localVarStack.push localVars
 
@@ -241,6 +258,12 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 			if str.length > word.length then word += ' ...'
 			out word, 'this.push( ' + str + ' );'
 
+		# Javascript constant
+		else if word[0] is "`"
+			str = getJsString word, wordRegEx
+			if str.length > word.length then word += ' ...'
+			out word, 'this.push( ' + str + ' );'
+
 		# var assignment, xxx=
 		else if word.length > 1 and word[-1..-1] is '='
 			out word, encodeSymbol(word[0..-2]) + ' = this.pop();'
@@ -248,7 +271,7 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		# left paren opening function def with option modifiers, :n>(<n
 		else if (m = /^(:)?((\d*)>)?\((<(\d*))?$/.exec word)
 			[colon, gt, gtn, lt, ltn] = m[1..]
-			if debugCompile then console.log 'lftparen', {colon, gt, gtn, lt, ltn}
+#			if debugCompile then console.log 'lftparen', {colon, gt, gtn, lt, ltn}
 			outFunc gtn, wordRegEx, not colon, ltn
 
 		# move outer stack items to inner stack, @n
@@ -265,7 +288,7 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		# gt and/or dot modifier to var or function, n>.xxx
 		else if (m = /^(((\d*)>)?(\.)?)([^\s]+)/.exec word)
 			[mod, gt, gtn, dot, rest] = m[1..]
-			if debugCompile then console.log 'gt_and/or_dot', {gt,  gtn, dot, rest, mod}
+#			if debugCompile then console.log 'gt_and/or_dot', {gt,  gtn, dot, rest, mod}
 
 			if not mod
 				out word, 'this.execOrPush( ' + encodeSymbol(word) + ' );'
@@ -334,21 +357,16 @@ wordBySym = _throw_: 'throw', _if_: 'if', _while_: 'while',  _dot_: '.', _new_: 
 
 encodeSymbol = (str) ->
 	if str.length is 0 then return str
-
-#	if not str[0] is '.' and str.indexOf('.') isnt -1
-#		words = str.split '.'
-#		strs = []
-#		for seg in words then if seg.length then strs.push encodeSymbol(seg)
-#		str = strs.join '.'
-
 	if str[0] is '`' then return str[1..]
-
 	if str of symByWord then return symByWord[str];
 
 	out = '';
 	for char in str
 		if (name = nameByChar[char]) then out += '_' + name + '_'
 		else out += char
+
+	if isNaN(out) and /^\d/.test out then out = '_num_' + out
+
 	out
 
 decodeSymbol = (str) ->

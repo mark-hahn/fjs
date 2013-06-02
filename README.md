@@ -87,7 +87,7 @@ Each word in FJS is either a Javascript constant or a Javascript function evalua
 
 Named variables are simply Javascript variables of the same name, except that illegal characters are escaped (see Words section).  Assignnment to a variable is accomplished by adding an equals sign to the end of the name.  The top item on the stack is popped and stored in that variable.  For example, `x=` will pop the top stack item and assign the value to the variable `x`.  Remember that accessing a variable is as simple as including the name.  So the following will assign the value 3 to x, retrieve the value, and print it.
 
-    3 x= x .
+    3 x= x .		// prints "3"
 
 
 *Functions*
@@ -189,7 +189,7 @@ This is a function that creates a special callback function internally that has 
 Later, when the aync javascript function calls the callback, the internal FJS cb-generated function restarts the FJS execution where the wait word paused, using the context it had before. The results passed to the cb-generated function are pushed on the stack.  This example calls the node fs.readFile function and then prints the text that was read.
 
 	'fs' >require fs=		// load the fs module and assing it to the fs variable.
-    'myfile.txt' 'utf8' cb >fs.readfile 'hello world' . wait >.
+    'fjs.bat' 'utf8' cb >fs.readFile 'hello world' . wait >.
     						// this prints "hello world" and then the error code and contents
 
 Note that the file path, encoding, and cb-generated function are passed as arguments to readfile.  Execution continues immediately, other code executes, and then FJS pause at the wait until the callback happens and the readile results are pushed to the stack.
@@ -238,10 +238,9 @@ Note that currently the only way to create arrays and objects in FJS is to use t
 
 Some javascript operators cannot work on stack variables.  They must operate on the variable name.  Examples are `with`, `typeof`, and `instanceof`.  For these operators you must combine the operator and operand in one word, separated by a colon.  Note that the `with` operator is in affect until the end of the surrounding function.
 
-	`{x:1} obj=		    		// assign object to var obj
+	`{x:1}` obj=		    	// assign object to var obj
     ( with:obj x . )			// prints 1 (with goes to end of function
     typeof:x .					// prints "undefined"
-    :abc instanceof:string .	// prints "true"
 
 
 *Http Server Example*
@@ -259,7 +258,7 @@ It's time for a more complex example.  This is the Node http server example from
 	1337 '127.0.0.1' rot 2>.listen drop
 	'Server running at http://127.0.0.1:1337/' . wait swap drop dup
 	  200 `{'Content-Type':'text/plain'}` rot 2>.writeHead
-	  'Hello World' 1>.end
+	  'Hello World' swap 1>.end
 
 Note how the flow of the FJS code matches the actual execution order, unlike JS with callbacks.  The execution "pauses" at the wait command (by saving a continution and returning to the JS event loop).  Then when all callbacks have occured internally execution will continue from the `wait` word.  On each new http request the `wait` command will repeat using a new context for each callback with the `request` and `result` objects on the stack.
 

@@ -47,7 +47,7 @@ class Context
 
 	pushArgsAndExec: (f, n) ->
 		n or= @curFrame.stack.length
-		res = f.apply @, @curFrame.stack.splice -n, n
+		res = f.apply @, @curFrame.stack.splice(-n, n)
 		if res isnt undefined then @curFrame.stack.push res
 
 	pushArray: (array) -> @curFrame.stack = @curFrame.stack.concat array
