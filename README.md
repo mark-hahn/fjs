@@ -262,3 +262,7 @@ It's time for a more complex example.  This is the Node http server example from
 
 Note how the flow of the FJS code matches the actual execution order, unlike JS with callbacks.  The execution "pauses" at the wait command (by saving a continution and returning to the JS event loop).  Then when all callbacks have occured internally execution will continue from the `wait` word.  On each new http request the `wait` command will repeat using a new context for each callback with the `request` and `result` objects on the stack.
 
+License
+-------
+
+FJS is made available using the standard MIT license.  See LICENSE.TXT.
