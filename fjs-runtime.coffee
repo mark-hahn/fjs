@@ -74,7 +74,7 @@ class Context
 			debugFunc.call ctxt, '<callback>'
 		ctxt._run()
 
-	funcCall: (debugFunc, dbgArgs, segments) ->
+	funcCall: (debugFunc, segments) ->
 		@frames.push @curFrame
 		@curFrame = new Frame segments
 		if debugFunc then debugFunc.call @, '('
