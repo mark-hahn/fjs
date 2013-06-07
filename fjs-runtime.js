@@ -98,11 +98,16 @@
       return this.curFrame.stack = this.curFrame.stack.concat(array);
     };
 
-    Context.prototype.pushFuncOrSym = function(v, s) {
-      if (typeof v === 'function') {
-        return this.curFrame.stack.push(v);
+    Context.prototype.pushReturnValue = function(val) {
+      if (typeof val === 'undefined') {
+        return;
+      }
+      if (val instanceof Array) {
+        return this.pushArray(val);
+      } else if (toString.call(val) === '[object Arguments]') {
+        return this.curFrame.stack.push(Array.prototype.slice(call(val)));
       } else {
-        return this.curFrame.stack.push(s);
+        return this.curFrame.stack.push(val);
       }
     };
 
@@ -137,7 +142,7 @@
       return ctxt._run();
     };
 
-    Context.prototype.funcCall = function(debugFunc, dbgArgs, segments) {
+    Context.prototype.funcCall = function(debugFunc, segments) {
       this.frames.push(this.curFrame);
       this.curFrame = new Frame(segments);
       if (debugFunc) {

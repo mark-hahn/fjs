@@ -1,27 +1,23 @@
 
 // -------- Examples from the docs --------
 
-"\nFrom the *Hello World* section" . drop*
+. "\nFrom the *Hello World* section" drop<
     . 'Hello World'
 
-"\nFrom the *Comments* section" . drop*
+. "\nFrom the *Comments* section" drop<
     . + 1 1   // prints "2" on stdout
     . * 1 1   // prints "1" on stdout
 
-"\nFrom the *Named Variables* section" . drop*
+. "\nFrom the *Named Variables* section" drop<
     x= 3 // assign 3 to variable x
     . x  // prints "3"
 
-"\nFrom the *Functions* section" . drop*
+. "\nFrom the *Functions* section" drop<
     ( . "hello world" )                   // creates and runs function, prints "hello world"
     printGreeting= :( . "hello world" )   // creates function and assigns it to a variable
     printGreeting						  // runs function, prints "hello world"
 
-"\nFrom the *Word Modifers* section" . drop*
-    . Math.min  1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
-    . min. Math 1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
-
-"\nFrom the *Word Modifers* section" . drop*
+. "\nFrom the *Word Modifers* section" drop<
 	.  x x= 1		// prints "1"
 	. :x x= 1		// prints "x"
 	.  Math.min		// prints "Infinity"
@@ -29,52 +25,117 @@
 	.  ( + 1 2 )    // prints "3"
 	. :( + 1 2 )	// prints "[Function]"
 
-"\nFrom the *Number/Asterisk Convention* section" . drop*
-    .2 1 2 3      // prints two items, "1 2", and leaves one item on the stack
-    .* 1 2 3      // prints all three, "1 2 3" and leaves the stack empty
-    drop* 1 2 3   // empties entire stack
+. "\nFrom the *Word Modifers* section" drop<
+    . Math.min  1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
+    . min. Math 1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
 
-"\nFrom the *Multiple Stacks* section" . drop*
-    ( . Math.max @2 ) 1 2 3  // prints "2" and leaves one item on stack
-    ( .  @ . @ . @ )  1 2 3  // prints "1", then "2", then "3"
-    ( .* @3 )         1 2 3  // prints "1 2 3"
+. "\nFrom the *Word Modifers* section" drop<
+    .    1 2 3				// pops one item and prints "1"
+    .<   1 2 3				// empties stack and prints "1 2 3"
+    .<2  1 2 3				// pops two items and prints "1 2"
+    . Math.min 	 1 2 3		// empties stack and prints "3"
+    . Math.max<2 1 2 3		// pops two items and prints "2"
 
-"\nFrom the *Function Results* section" . drop*
+. "\nFrom the *Using Arguments* section" drop<
+    ( .  @ . @ . @ )   1 2 3  // prints "1", then "2", then "3" and leaves stack empty
+    ( . Math.max @<2 ) 1 2 3  // prints "2" and leaves one item on stack
+    ( .< @< 4 )<2      1 2 3  // prints "1 2 4" and leaves one item on stack
+
+. "\nFrom the *Function Results* section" drop<
     .*  (   1 2 3 )   // prints "1 2 3"
     .*  ( + 1 2 3 )   // prints "3 3"
     . + ( + 1 2 3 )   // prints "6"
 
-"\nFrom the *Named Variable Scopes* section" . drop*
+. "\nFrom the *Function Results* section" drop<
+	. + - 5 3 + 2 4				// prints "8"
+	. + ( - 5 3 ) ( + 2 4 )		// same but much more readable.
+
+. "\nFrom the *Function Results* section" drop<
+    . Math.min				// prints Infinity
+    .< alert 'hi' 4			// alerts "hi" and then prints only "4"
+    split. "1 2 3" ' '		// leaves three items on stack: "1", "2", "3"
+
+. "\nFrom the *Named Variable Scopes* section" drop<
 	  x= 1		// assign 1 to x
 	( y= 2 )	// anonymous function executed with var y in local scope
 	. typeof:y  // prints "undefined"
 	( x= 3 )  	// var x is from outer scope
 	. x 		// prints 3, not 1
 
-"\nFrom the *Async Execution* section" . drop*
+. "\nFrom the *Async Execution* section" drop<
 	fs= require 'fs'  // load the fs module and assing it to the fs variable.
 	.* wait ( . 'hello world' ) fs.readFile 'fjs.bat' 'utf8' cb
                       // prints "hello world" and then the error code and file contents
 
-"\nFrom the *Primitve Words* section" . drop*
+. "\nFrom the *Primitve Words* section" drop<
     fjs-primitives= require './fjs-primitives'
     with:fjs-primitives
 
-"\nFrom the *Modules* section" . drop*
-    fs= require 'fs'             	// load module and save it in fs var
-    fs.writefileSync 'hello world' 	// use fs as the namespace for write
+. "\nFrom the *Comparisoms and Boolean Operators* section" drop<
+    . < 1 2				// prints "true"
+    . > 1 2				// prints "false"
+    . = 3 + 1 2			// prints "true"
 
-"\nFrom the *Modules* section" . drop*
-     exports.increment= ( + 1 @ )	// The `increment` function is exported from the module
+. "\nFrom the *Comparisoms and Boolean Operators* section" drop<
+	. not true						// prints "false"
+    . and true false				// prints "false'
+    . or < x 3 > x 5 x= 6 			// prints "true'
+	. or ( < x 3 ) ( > x 5 ) x= 6	// same as last line but easier to read
 
-"\nFrom the *Embedding Javascript Code* section" . drop*
-    . `x = 1 + 1` 		// assigns 2 to x and prints "2"
-    obj= `{a:1, b:2}` 	// assigns a constant object to the variable `obj`
-
-"\nFrom the *Special Operator Prefixes* section" . drop*
+. "\nFrom the *Special Operator Prefixes* section" drop<
 	obj= `{x:1}` 		    	// assign object to var obj
     ( . x with:obj )			// prints 1 (`with` goes to end of function
     . typeof:x  			    // prints "undefined"
+
+. "\nFrom the *Conditionals and Looping* section" drop<
+	if ( = x 1 ) :( console.log 'x is 1' ) x= 1		// prints "x is 1"
+	if = x 1 prt1 x= 1 prt1= :( . 'x is 1' ) 		// prints "x is 1"
+    . y if < x 3 :( y= 2 ) y= 1 x= 1				// prints "2"
+    . y doif :( y= 2 ) < x 3 y= 1 x= 1				// prints "2"
+
+. "\nFrom the *Conditionals and Looping* section" drop<
+    while :( < x 3 ) :( x= + x 1 . x ) x= 0	// prints "0", "1" and "2"
+
+. "\nFrom the *Conditionals and Looping* section" drop<
+    repeat :( < x 3 x= + x 1 . x ) x= 0	  // prints "0", "1" and "2"
+
+. "\nFrom the *Arrays and Objects* section" drop<
+	. []						// prints "[]"
+	. `[1, 2]`				    // prints "{ a: 1, b: 2 }"
+	. `{a:1, b:2}`				// prints "[ 1, 2 ]"
+
+. "\nFrom the *Arrays and Objects* section" drop<
+    . x.  `{ x: 'one', y: 'two' }`		// prints "one", js: console.log({x:'one', y:'two'}.x)
+    . get `{ x: 'one', y: 'two' }` 'x' 	// prints "one", js: console.log({x:'one', y:'two'}['x'])
+    . get `[ 'zero', 'one' ]`	    1	// prints "one", js: console.log(['zero', 'one'][1])
+
+. "\nFrom the *Arrays and Objects* section" drop<
+    . x set x  0 'a' x= []			// prints "[ "a" ]",  js: x=[]; x[0]   = 'a'; console.log(x)
+    . x set x 'a' 1  x= {}			// prints "{ a: 1 }", js: x={}; x['a'] =  1 ; console.log(x)
+
+. "\nFrom the *Arrays and Objects* section" drop<
+    . pop. `[1, 2, 3]`				// prints "3"
+    . x push. x 4 x= `[1, 2, 3]`	// prints "[ 1, 2, 3, 4 ]"
+
+. "\nFrom the *Arrays and Objects* section" drop<
+    map   :( * dup @ ) `[1,2,5]` 		// leaves the array  [1, 4, 25] on the stack
+	map<3 :( * dup @ ) `[1,2]` `[0,3]`	// leaves the arrays [1, 4] and [0, 9] on the stack
+
+. "\nFrom the *Arrays and Objects* section" drop<
+    each :( . +< '[' @ ']=' @ ) `[1, 2]`	// prints "[0]=1 [1]=2"
+
+. "\nFrom the *Modules* section" drop<
+    fs= require 'fs'             	// load module and save it in fs var
+    fs.writefileSync 'hello world' 	// use fs as the namespace for write
+
+. "\nFrom the *Modules* section" drop<
+     exports.increment= ( + 1 @ )	// The `increment` function is exported from the module
+
+. "\nFrom the *Embedding Javascript Code* section" drop<
+    . `x = 1 + 1` 		// assigns 2 to x and prints "2"
+    obj= `{a:1, b:2}` 	// assigns a constant object to the variable `obj`
+
+. "\nFrom the *Http Server* section" drop<
 
 // -------- Standard Javascript http server example from Node --------
 //   var http = require('http');

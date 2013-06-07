@@ -24,19 +24,20 @@ class Context
 
 	stack: -> @curFrame.stack
 
-	pop:    -> @curFrame.stack.pop()
-	popAll: -> stk = @curFrame.stack; @curFrame.stack = []; stk
-	popN: (n) ->
-		n or= @curFrame.stack.length
-		@curFrame.stack.splice -n, n
+	pop: -> @curFrame.stack.shift()
 
-	push: (v) -> @curFrame.stack.push v
+	popAll: -> stk = @curFrame.stack; @curFrame.stack = []; stk
+
+	popN: (n or= @curFrame.stack.length) ->
+		@curFrame.stack.splice 0, n
+
+	push: (v) -> @curFrame.stack.unshift v
 
 	pushOuter: (n) ->
 		outerStk = @frames[@frames.length-1].stack
 		n or= outerStk.length
-		items = outerStk.splice -n, n
-		@curFrame.stack = @curFrame.stack.concat items
+		items = outerStk.splice 0, n
+		@curFrame.stack = items.concat @curFrame.stack
 
 	new: (Class, args) ->
 		(->
@@ -45,30 +46,37 @@ class Context
 			new construct
 		)()
 
-	pushArgsAndExec: (f, n) ->
-		n or= @curFrame.stack.length
-		res = f.apply @, @curFrame.stack.splice(-n, n)
-		if res isnt undefined then @curFrame.stack.push res
+	pushArray: (array) -> @curFrame.stack = array.concat @curFrame.stack
 
-	pushArray: (array) -> @curFrame.stack = @curFrame.stack.concat array
+	pushReturnValue: (val) ->
+		if typeof val is 'undefined' then return
+		if val instanceof Array then @pushArray val
+		else if toString.call(val) is '[object Arguments]'
+			@pushArray Array.prototype.slice call val
+		else @curFrame.stack.unshift val
 
-	pushFuncOrSym: (v, s) ->
-		if typeof v is 'function' then @curFrame.stack.push v
-		else @curFrame.stack.push s
+	pushArgsAndExec: (f, n = @curFrame.stack.length) ->
+		@overrideDefault = true
+		@pushReturnValue f.apply @, @curFrame.stack.splice 0, n
+		delete @overrideDefault
 
-	execOrPush: (v) ->
-		res = if typeof v is 'function' then v.call @ else v
-		if res isnt undefined then @curFrame.stack.push res
+	execOrPush: (word) ->
+		if typeof word is 'function'
+			stk = @curFrame.stack
+			@curFrame.stack = []
+			@pushReturnValue word.apply @, stk
+		else
+			@push word
 
 	pushCB: (debugFunc) ->
-		@curFrame.stack.push @_callback.bind @, debugFunc
+		@curFrame.stack.unshift @_callback.bind @, debugFunc
 		@callbacksPending++
 
 	_callback: (debugFunc, args...) ->
 		if --@callbacksPending > 0 then return
 		ctxt = (if @callbacksPending is 0 then @ else ctxt = @savedCtxt)
 		@savedCtxt = ctxt.clone()
-		ctxt.curFrame.stack = ctxt.curFrame.stack.concat args
+		ctxt.curFrame.stack = args.concat ctxt.curFrame.stack
 		if debugFunc
 			console.log()
 			debugFunc.call ctxt, '<callback>'
@@ -90,7 +98,7 @@ class Context
 	funcReturn: ->
 		stack = @curFrame.stack
 		if (@curFrame = @frames.pop())
-			@curFrame.stack = @curFrame.stack.concat stack
+			@curFrame.stack = stack.concat @curFrame.stack
 
 module.exports = new Context
 

@@ -29,10 +29,9 @@ While FJS code can be compiled and run, the project is pre-pre-alpha.  The last 
 
 Some missing features ...
 
-- While there are docs (see below) there is no tutorial, which is the best way to learn a language.
-- REPL.  Plans are in the works for a webpage based REPL with sandbox.
+- Plans are in the works for a webpage based REPL with sandbox.
 - Better error reporting. Currently debugging is done by an exhaustive execution trace.
-- Unit testing is needed.
+- Unit testing.
 - Optimized compilation for faster execution.  Speed is unmeasured at this point. (Even though FJS semantics assume a stack, much of the code can be optimized to remove the stack behind the scenes.)
 
 
@@ -81,7 +80,7 @@ Currently there are only line-based comments.  Just as in Javascript a double sl
 
 *Execution*
 
-FJS is unique, even among other FORTH-like languages, in that execution always proceeds from one word to the next without ever going backwards and never skipping.  Conditional execution is handled by using anonymous functions with the `if` command that are conditionally executed.  Loops are managed by calling functions repeatedly with `while` commands, etc.  Also, using iterator functions like `map` and `fold` reduce the need for loops.  This simple linear execution, even when calling async functions, makes FJS quite readable once you learn the command words and the stack model becomes familiar.
+FJS is unique, even among other FORTH-like languages, in that execution always proceeds from one word to the next without ever going backwards and never skipping.  Conditional execution is handled by using functions with the `if` command.  Loops are managed by calling functions repeatedly with `while` commands, etc.  Also, using iterator functions like `map` and `reduce` reduce the need for loops.  This simple linear execution, even when calling async functions, makes FJS quite readable once you learn the command words and the stack model becomes familiar.
 
 *Words*
 
@@ -91,7 +90,7 @@ Each word in FJS is either a Javascript constant, Javascript variable, or a Java
 
 *Named Variables*
 
-Named variables are simply Javascript variables of the same name, except that illegal characters are escaped (see Words section).  Assignnment to a variable is accomplished by adding an equals sign to the end of the name.  The top item on the stack is popped and stored in that variable.  For example, `x=` will pop the top stack item and assign the value to the variable `x`.  Remember that accessing a variable is as simple as including the name.  So the following will assign the value 3 to x, retrieve the value, and print it.
+Named variables are simply Javascript variables of the same name, except that illegal characters are escaped (see the *Words* section).  Assignnment to a variable is accomplished by adding an equals sign to the end of the name.  The top item on the stack is popped and stored in that variable.  For example, `x=` will pop the top stack item and assign the value to the variable `x`.  Remember that accessing a variable is as simple as including the name.  So the following will assign the value 3 to x, retrieve the value, and print it.
 
     x= 3 // assign 3 to variable x
     . x  // prints "3"
@@ -101,7 +100,7 @@ Named variables are simply Javascript variables of the same name, except that il
 
 A function is defined in FJS by a set of parentheses surrounding code.  There must be white space around the parens like the words.  Every function definition in FJS is anonymous until assigned to a variable (ala Coffeescript and Postscript).
 
-Here is a function that prints "hello world".  In the first line the function is defined and executed immediately.  In the last two lines the function is pushed on the stack (see `:` modifer in "Word Modifers" section), the function is then assigned to a named variable, and the function is then called by simply including the variable name.
+Here is a function that prints "hello world".  In the first line the function is defined and executed immediately.  In the last two lines the function is pushed on the stack (see `:` modifer in the *Word Modifers* section), the function is then assigned to a named variable, and the function is then called by simply including the variable name.
 
     ( . "hello world" )                   // creates and runs function, prints "hello world"
     printGreeting= :( . "hello world" )   // creates function and assigns it to a variable
@@ -110,14 +109,9 @@ Here is a function that prints "hello world".  In the first line the function is
 
 *Word Modifers*
 
-There are several characters that have special meaning when added to a word or function.  They are the modifiers `.`, `:`, and `=`.  These sigils are not just annotative.  They cause new behavior.
+There are several characters that have special meaning when added to a word or function.  They are the modifiers `:`, `.`, `<`, and `=`.  These sigils are not just annotative.  They modify the program behavior.  The `:` is prepended to the beginning of the word and the rest are appended to the end of the word.
 
-The `.` modifier, not to be confused with the dot print word, acts much the same way as it does in Javascript. The dot is appended to the end of a variable.  It pops an object off the stack and references the named property of the object, leaving the property value (or function result) on the stack. These two lines are functional identical.
-
-    . Math.min  1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
-    . min. Math 1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
-
-The `:` modifier blocks the word's evalution and puts it directly on the stack.  The colon is prepended to the variable or function.  In the case of a variable name it pushes the name itself as a string.  So this is actually just shorthand for a string constant with no white space.  (This is called a "symbol" in Ruby).  In the case of a function name, it pushes the actual function on the stack instead of calling it.  This also works with anonymous functions.
+The `:` modifier is prepended to the beginning of a variable name or function.  It blocks the word's evalution and puts it directly on the stack.  In the case of a variable name it pushes the name itself as a string.  So this is actually just shorthand for a string constant with no white space.  (This is called a "symbol" in Ruby).  In the case of a function name, it pushes the actual function on the stack instead of calling it.  This also works with anonymous functions.
 
 	.  x x= 1		// prints "1"
 	. :x x= 1		// prints "x"
@@ -126,28 +120,45 @@ The `:` modifier blocks the word's evalution and puts it directly on the stack. 
 	.  ( + 1 2 )    // prints "3"
 	. :( + 1 2 )	// prints "[Function]"
 
-And lastly, the `=` suffix is described in the "Named Variables" section.
+The `.` modifier, not to be confused with the dot print word, acts much the same way as it does in Javascript. The dot is appended to the end of a variable.  It pops an object off the stack and references the named property of the object, leaving the property value (or function result) on the stack. These two lines are functionally identical.
 
-*Number/Asterisk Convention*
+    . Math.min  1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
+    . min. Math 1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
 
-You will see many words that end in a number or asterisk.  This is just a convention, not a real word modifier.  When there is a number it means how many items from the top of the stack to operate on.  When there is an asterisk it means to operate on all items in the stack.
+The `<` modifier is appended to the end of any function.  It has an optional form with a number `<n`.  It overrides the default number of items to pop off the stack and pass to the called function as arguments.  When there isn't a number after the `<`, the entire stack is passed as arguments and emptied.  The default number of arguments depends on the funcion but for javascript functions it is always the entire stack.
 
-    .2 1 2 3      // prints two items, "1 2", and leaves one item on the stack
-    .* 1 2 3      // prints all three, "1 2 3" and leaves the stack empty
-    drop* 1 2 3   // empties entire stack
+    .    1 2 3				// pops one item and prints "1"
+    .<   1 2 3				// empties stack and prints "1 2 3"
+    .<2  1 2 3				// pops two items and prints "1 2"
+    . Math.min 	 1 2 3		// empties stack and prints "3"
+    . Math.max<2 1 2 3		// pops two items and prints "2"
 
+The `=` suffix is described in the *Named Variables* section.
 
 *Multiple Stacks*
 
-In FJS, every function invocation creates a new invisible data stack in the function's local scope.  All words operate on the current local stack.  This means as functions calls are nested a "stack of stacks" is created.  When a function is called it only empties the current "inner" stack.  All "outer" stacks are not affected.
+In FJS, every function invocation creates a new invisible data stack in the function's local scope.  All words now operate on this new local stack.  This means as function calls are nested, a "stack of stacks" is created.  When a function is called it can only push/pop items from/to the current "inner" stack.  All "outer" stacks are not affected.
 
-On every function call, the new stack starts empty and the local stack is moved to the function call arguments.  This brings up the problem of accessing stack items outside the function's local scope. What use is a function that can't operate on existing stack items?
+Editor's note:  The next two paragraphs are implementation details and may be skipped.
 
-The `@` word directly pops items off of the outer stack and pushes them onto the inner local stack.  It is a word made up of an at sign `@`, possibly followed by a number (`@n`). The number tells how many items to move from the outer stack to the inner.  If there is no number then one item is moved.    This can be used anywhere inside of a function and there can be multiple of these in a function.
+On every function call the old local stack (the outer stack) is moved to the function call arguments leaving the old stack empty.  A normal, non-FJS Javascript function operates on these call arguments to produce its return value which is pushed on the outer stack when it terminates. This non-FJS Javascript function does not access the new local stack and it stays empty.
 
-    ( . Math.max @2 ) 1 2 3  // prints "2" and leaves one item on stack
-    ( .  @ . @ . @ )  1 2 3  // prints "1", then "2", then "3"
-    ( .* @3 )         1 2 3  // prints "1 2 3"
+So weirdly enough, when a non-FJS function executes, the inner and outer stacks are both empty the whole time.  Note that a function can return any number of items using an array (see the *Function Results* section).  This allows a function to effectively operate only on the stack's top items by returning most of the arguments back in an array.  Even FJS primitive words, which are implemented in Javascript, operate this way.
+
+*Using Arguments*
+
+An FJS function (made with parens) operates on the local stack instead of the arguments, like all stack-based languages do. But the local stack starts off empty, so how does the FJS function get items onto its local stack?  This is accomplished by a word that pops items from the arguments and pushes them onto the local stack.
+
+The `@` word pops one item off of the `arguments` list and pushes it onto the local stack. You can use the word modifier `<n` to specify moving more than one argument. This can be used anywhere inside of a function and there can be multiple of these in a function.
+
+Because the outer stack is passed to the function as arguments and then `@` moves arguments to the inner stack, one can think of the `@` word as just moving items from the outer stack to the inner stack.
+
+    ( .  @ . @ . @ )   1 2 3  // prints "1", then "2", then "3" and leaves stack empty
+    ( . Math.max @<2 ) 1 2 3  // prints "2" and leaves one item on stack
+    ( .< @< 4 )<2      1 2 3  // prints "1 2 4" and leaves one item on stack
+
+Note that in the last line the `<2` modifier on the function specifies the number of outer stack items popped and passed as arguments.
+
 
 *Function Results*
 
@@ -157,13 +168,20 @@ We need a way for an FJS function to return results to the outer stack when the 
     .*  ( + 1 2 3 )   // prints "3 3"
     . + ( + 1 2 3 )   // prints "6"
 
-From the example above, you can see that an anonymous function looks and behaves like simple paren grouping as in this example javascript code: `( 1 + 2) * 3`.  However cool this is, I have not figured out any case where this is useful.  Stack-based languages don't need grouping.
+From the example above, you can see that an anonymous function looks and behaves like simple paren grouping as in this example javascript code: `( 1 + 2) * 3`.  While FJS and other stack-basec languages never require grouping, it can be used to help readability.
 
-Javascript function return values are also pushed on the stack.  When a function returns `undefined` then nothing is pushed on the stack.  This is convenient and usually gives logical results.  For example, the print `.` word is actually the javascript console.log function which returns undefined which leaves the stack clean and avoids needing the drop word.
+	. + - 5 3 + 2 4				// prints "8"
+	. + ( - 5 3 ) ( + 2 4 )		// same but much more readable.
 
-If the function return value is an array, then all the items are removed from the array and placed on the stack. All other return types are just placed on the stack.
+Javascript function return values are also pushed on the stack, except when a function returns `undefined`.  Then nothing is pushed on the stack.  This is convenient and usually gives logical results.  For example, the print `.` word is actually the javascript console.log function which returns undefined which leaves the stack clean and avoids needing the drop word.
+
+If the function return value is an array, then all the items from the array and placed separately on the stack. All other return types are just pushed on the stack.
 
 When calling a JSF function from Javascript the return value is undefined if the stack is empty.  Otherwise the entire local stack is returned as an array.
+
+    . Math.min				// prints Infinity
+    .< alert 'hi' 4			// alerts "hi" and then prints only "4"
+    split. "1 2 3" ' '		// leaves three items on stack: "1", "2", "3"
 
 *Named Variable Scopes*
 
@@ -178,9 +196,9 @@ Scoping works as it does in Ruby and Coffeescript.  A variable is in the scope o
 
 *Async Execution*
 
-Javascript requires nested callback functions in order to handle asynchronous activity.  FJS requires no callback functions.  There are two primitive words, `cb` and `wait`, that allow the code to pause waiting for async results. When there is a function that requires a callback argument, you simply use the `cb` word.
+Javascript requires nested callback functions in order to handle asynchronous activity.  FJS requires no callback functions.  There are two primitive words, `cb` and `wait`, that allow the code to pause waiting for async results.
 
-`cb` is a function that creates a special callback function internally that has the complete execution context bound to it.  This is called a "continuation".  After the async function is called the FJS execution continues without any delay.  When a `wait` word is encountered the execution of that context is halted.
+When there is a function that requires a callback argument, you simply use the `cb` word.  `cb` is a function that creates a special callback function that has the complete execution context bound to it.  This is called a "continuation".  After the async function is called the FJS execution continues without any delay.  When a `wait` word is encountered the execution of that context is halted.
 
 Later, when the aync javascript function calls the callback, the internal FJS cb-generated function restarts the FJS execution where the `wait` word paused, using the context it had before. The results passed to the cb-generated function are pushed on the stack.  This example calls the node fs.readFile function and then prints the text that was read.
 
@@ -206,6 +224,89 @@ The `with` operator allows the primitives to be used without a namespace prefix.
 
 Implementation detail:  The primitive functions get the stack in their arguments like any other function.  They then operate on the `arguments` stack-like object.  Returning `arguments` from the function then puts the remaining items back on the stack, like any other function return.
 
+*Comparisoms and Boolean Operators*
+
+There are a set of primitives, `<`, `=`, and `>` (and others) that pop two items off the stack, compare them, and push a boolean value on the stack.  These equate to the javascript operators `<`, `===`, and `>`.
+
+    . < 1 2				// prints "true"
+    . > 1 2				// prints "false"
+    . = 3 + 1 2			// prints "true"
+
+Boolean primitive operators, like `not`, `and`, and `or` pop two items and push the boolean operation result back.  These are equivalent to the Javascript operators `!`, `&&`,and  `||`.
+
+	. not true						// prints "false"
+    . and true false				// prints "false'
+    . or < x 3 > x 5 x= 6 			// prints "true'
+	. or ( < x 3 ) ( > x 5 ) x= 6	// same as last line but easier to read
+
+
+*Special Operator Prefixes*
+
+Some javascript operators cannot work on stack variables.  They must operate on the variable name.  Examples are `with`, `typeof`, and `instanceof`.  For these operators you must combine the operator and operand in one word, separated by a colon.  Note that the `with` operator is in affect until the end of the surrounding function.
+
+	obj= `{x:1}` 		    	// assign object to var obj
+    ( . x with:obj )			// prints 1 (`with` goes to end of function
+    . typeof:x  			    // prints "undefined"
+
+
+*Conditionals and Looping*
+
+FJS code is conditionally executed by an `if` word that pops a truthy value (var or function evaluation) off the stack, pops a function off the stack, and then executes the function only if the truthy value is true.
+
+There ia a convenience version of `if` called `doif` that pops the function to execute first and then the truthy value.
+
+	if ( = x 1 ) :( console.log 'x is 1' ) x= 1		// prints "x is 1"
+	if = x 1 prt1 x= 1 prt1= :( . 'x is 1' ) 		// prints "x is 1"
+    . y if < x 3 :( y= 2 ) y= 1 x= 1				// prints "2"
+    . y doif :( y= 2 ) < x 3 y= 1 x= 1				// prints "2"
+
+Note that the functions such as `:( y= 2 )` need the colon to push the function on the stack instead of evaluating it immediately.
+
+The most common looping construct is the `while` word. It is somewhat like `if` in that it pops a conditional function off the stack, pops a function to execute off the stack, and then executes the second function repeatedly while the conditional function returns a truthy value of true.  There is also a version `dowhile` that reverses the arguments like `doif` does.
+
+    while :( < x 3 ) :( x= + x 1 . x ) x= 0	// prints "0", "1" and "2"
+
+Another looping word is called `repeat`.  It takes one function off the stack and then executes it repeatedly until it returns the boolean value `false` (exact, not truthy).  Note that this always executes at least once.
+
+    repeat :( < x 3 x= + x 1 . x ) x= 0	  // prints "0", "1" and "2"
+
+
+*Arrays and Objects*
+
+An empty array or object can be created with the primitive words `[]` or `{}`.  Array and object constants can be created using javascipt code enclosed in backticks.
+
+	. []						// prints "[]"
+	. `[1, 2]`				    // prints "{ a: 1, b: 2 }"
+	. `{a:1, b:2}`				// prints "[ 1, 2 ]"
+
+As described before, the `.` word modifier accesses an object's property with a constant name.  To access an item with a variable index, use the word `get`, which pops an integer index for an array or a string index for an object.
+
+    . x.  `{ x: 'one', y: 'two' }`		// prints "one", js: console.log({x:'one', y:'two'}.x)
+    . get `{ x: 'one', y: 'two' }` 'x' 	// prints "one", js: console.log({x:'one', y:'two'}['x'])
+    . get `[ 'zero', 'one' ]`	    1	// prints "one", js: console.log(['zero', 'one'][1])
+
+To set a value in an array or object with a variable index, use the `set` word.
+
+    . x set x  0 'a' x= []			// prints "[ "a" ]",  js: x=[]; x[0]   = 'a'; console.log(x)
+    . x set x 'a' 1  x= {}			// prints "{ a: 1 }", js: x={}; x['a'] =  1 ; console.log(x)
+
+The array type supports the words `push.`, `pop.`, `shift.`, and `unshift.` like any other javascript methods.
+
+    . pop. `[1, 2, 3]`				// prints "3"
+    . x push. x 4 x= `[1, 2, 3]`	// prints "[ 1, 2, 3, 4 ]"
+
+A functional style that often replaces the need for looping is to iterate a function over an array or an object.  The `map`, `reduce`, and `filter` words are good examples.  In the first line below the function is executed three times and one item of the array is passed in as an argument each time and then that item is replaced with the value squared.
+
+    map   :( * dup @ ) `[1,2,5]` 		// leaves the array  [1, 4, 25] on the stack
+	map<3 :( * dup @ ) `[1,2]` `[0,3]`	// leaves the arrays [1, 4] and [0, 9] on the stack
+
+The `each` word operates much like the `repeat` word but once for each item in an array or object. Unlike `map` it leaves nothing on the stack.  It can be aborted early by returning the exact value of `false'.  This is stolen from jQuery's `each` function.  The first argument passed into the function is the key and the second is the value.
+
+    each :( . +< '[' @ ']=' @ ) `[1, 2]`	// prints "[0]=1 [1]=2"
+
+Note that the word `+<` concatenates all strings on the right into one string.  `+< a b c` operates exactly as the javascript `a + b + c` including the rules about numeric addition versus string concatenation.
+
+
 *Modules*
 
 You have seen the use of javascript modules in previous examples.  This is simply using the javascript `require` function like FJS calls any other function.  The resulting loaded module is assigned to a variable and this variable effectively becomes the namespace for the module's vars/functions.
@@ -230,16 +331,7 @@ Enclosing javascript code in backticks places it into the compiled output unchan
 Note that currently the only way to create arrays and objects in FJS is to use this technique.  Primitves will be added soon to create arrays and objects.  The *Word Modifers* section details the existing `.` modifer which allows access to arrays and objects.
 
 
-*Special Operator Prefixes*
-
-Some javascript operators cannot work on stack variables.  They must operate on the variable name.  Examples are `with`, `typeof`, and `instanceof`.  For these operators you must combine the operator and operand in one word, separated by a colon.  Note that the `with` operator is in affect until the end of the surrounding function.
-
-	obj= `{x:1}` 		    	// assign object to var obj
-    ( . x with:obj )			// prints 1 (`with` goes to end of function
-    . typeof:x  			    // prints "undefined"
-
-
-*Http Server Example*
+*Http Server*
 
 It's time for a more complex example.  This is the Node http server example from the Node home page followed by the FJS version.
 
@@ -256,7 +348,7 @@ It's time for a more complex example.  This is the Node http server example from
         ( writeHead. @ 200 `{'Content-Type':'text/plain'}` )
         ( end.       @ 200 'Hello World'                   )
 
-Note how the flow of the FJS code matches the actual execution order, unlike JS with callbacks.  The execution "pauses" at the wait command (by saving a continution and returning to the JS event loop).  Then when callbacks occur internally, execution will continue from the `wait` word.  On each new http request the `wait` command will repeat using a new context for each callback with the `request` and `result` objects on the stack.
+Note how the flow of the FJS code matches the actual execution order, unlike the JS code with its callbacks.  The execution "pauses" at the wait command (by saving a continution and returning to the JS event loop).  Then when callbacks occur internally, execution will continue from the `wait` word.  On each new http request the `wait` command will repeat using a new context for each callback with the `request` and `result` objects on the stack.
 
 License
 -------

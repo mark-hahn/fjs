@@ -26,7 +26,7 @@ funcOut = "\n// File #{path} compiled by FJS version #{version} " +
 
 ########### compile function ############
 
-compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
+compileFunc = (funcSrc, pfx = 'this') ->
 
 
 	#################### find span routines #####################
@@ -49,46 +49,52 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 			i++
 		throw new Exception 'Unterminated string'
 
-	getJsString = (word, regex) ->
-		out = ""
-		i = regex.lastIndex - word.length + 1
-		while i < funcSrc.length
-			chr0 = funcSrc[i]
-			chr1 = funcSrc[i+1] ? ' '
-			if chr0 is '\\'
-				out += chr0 + chr1
-				i += 2
-				continue
-			if chr0 is "`" and /\s/.test chr1
-				regex.lastIndex = i + 1
-				return out
-			out += chr0
-			i++
-		throw new Exception 'Unterminated backtick string'
+	getFuncString = (word, regex) ->
+		out = word
 
-	getFuncString = (regex) ->
-		out = ''
 		i = regex.lastIndex
 		while i < funcSrc.length
 			chr0 = funcSrc[i]
 			chr1 = funcSrc[i+1] ? ' '
 			chr2 = funcSrc[i+2] ? ' '
+			chr3 = funcSrc[i+3] ? ' '
+
 			if chr0 is '\\'
 				out += chr0 + chr1
 				i += 2
 				continue
-			if /\s/.test(chr0) and chr1 is ')' and /\s/.test(chr2)
-				regex.lastIndex = i + 2
-				return out
+
+			if /\s/.test(chr0)
+				if chr0 is '/' and chr1 is '/'
+					while ++i < funcSrc.length and funcSrc[i] isnt '\n' then
+					continue
+
+				else if chr1 in ['"', "'", "`"]
+					regex.lastIndex = i + 2
+					out += chr0 + getString chr1, regex
+					i = regex.lastIndex
+					continue
+
+				else if chr1 is '(' and /\s/.test(chr2)
+					regex.lastIndex = i + 2
+					out += chr0 + getFuncString '(', regex
+					i = regex.lastIndex
+					continue
+
+				else if chr1 is ':' and chr2 is '(' and /\s/.test(chr3)
+					regex.lastIndex = i + 3
+					out += chr0 + getFuncString ':(', regex
+					i = regex.lastIndex
+					continue
+
+				else if chr1 is ')' and /\s/.test(chr2)
+					regex.lastIndex = i + 2
+					return out + chr0 + ')'
+
 			out += chr0
 			i++
-		throw new Exception 'Unterminated function, missing right paren'
 
-	burnToEOL = (regex) ->
-		eolRegex = new RegExp '.*', 'gm'
-		eolRegex.lastIndex = regex.lastIndex
-		eolRegex.exec funcSrc
-		regex.lastIndex = eolRegex.lastIndex
+		throw new Exception 'Unmatched left paren'
 
 
 	#################### emit routines #####################
@@ -105,18 +111,18 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		else
 			funcOut += str + '\n'
 
-	outFunc = (wordRegEx, exec = yes) ->
+	outFunc = (word, exec = yes) ->
 
-		if debugCompile then console.log 'outFunc', exec
+		if debugCompile then console.log 'outFunc', word.length, exec
 
 		if exec
 			out null, '( function(){'
 		else
-			out null, 'this.push( function(){'
+			out null, 'this.pushReturnValue( function(){'
 
 		depth++
 
-		compileFunc getFuncString wordRegEx
+		compileFunc word
 
 		depth--
 		out null, '}'
@@ -166,6 +172,8 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 		wordsInLine.push wordMatch
 
 		if not whiteSpace or /\n/.test whiteSpace or wordRegEx.lastIndex is funcSrc.length
+			wordsInLine.reverse()
+
 			for word in wordsInLine
 				if /^\d*>\(|:?\(<\d*$/.test(word) or word in ['(', ':('] then break
 
@@ -208,19 +216,29 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 	wordsInLine = []
 
 	wordRegEx = new RegExp '(\\S+)(\\s*)', 'g'
+
 	while (matches = wordRegEx.exec funcSrc)
 		[_, wordMatch, whiteSpace] = matches
 
-		wordsInLine.push wordMatch
+		if not (comment = (wordMatch[0..1] is '//'))
 
-		if not whiteSpace or /\n/.test whiteSpace or wordRegEx.lastIndex is funcSrc.length
+			# string constant
+			if wordMatch[0] in ['"', "'", "`"]
+				wordMatch = getString wordMatch, wordRegEx
+
+			else if /^:?\($/.test wordMatch
+				wordMatch = getFuncString wordMatch, wordRegEx
+
+			wordsInLine.push wordMatch
+
+		if comment or not whiteSpace or /\n/.test(whiteSpace) or
+							wordRegEx.lastIndex is funcSrc.length
+			wordsInLine.reverse()
 
 			for word in wordsInLine
-				if debugCompile then console.log 'word: ', word
+				if debugCompile then console.log 'word: ', word[0..20]
 
-				if word[0..1] is '//' then burnToEOL wordRegEx
-
-				else if word[0..4] is 'with:'
+				if word[0..4] is 'with:'
 					topIdx = withStmntStack.length-1
 					sym = encodeSymbol word[5..]
 					withStmntStack[topIdx].push sym
@@ -237,10 +255,11 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 					out word, 'this.push( this.pop() instanceof ' + sym + ' );'
 					depth++
 
-				else if word is 'cb' then out word, 'this.pushCB(' +
-						(if debugRuntime then 'fjsInspect' else 'null') + ');'
+				else if word is 'cb'
+					out word, 'this.pushCB(' +
+								(if debugRuntime then 'fjsInspect' else 'null') + ');'
 
-				else if word is  'wait'
+				else if word is 'wait'
 					out word, 'this.wait();'
 					for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
 					depth--
@@ -250,17 +269,9 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 						out null, 'with( ' + encodeSymbol(w) + ' ) {'
 						depth++
 
-				# string constant
-				else if word[0] in ['"',"'"]
-					str = getString word, wordRegEx
-					if str.length > word.length then word += ' ...'
-					out word, 'this.push( ' + str + ' );'
-
-				# Javascript constant
-				else if word[0] is "`"
-					str = getJsString word, wordRegEx
-					if str.length > word.length then word += ' ...'
-					out word, 'this.push( ' + str + ' );'
+				# literal string
+				else if word[0] is ':'
+					out word, 'this.push( "' + (word[1..].replace /"/g, '\\"' )  + '" );'
 
 				# var assignment, xxx=
 				else if word.length > 1 and word[-1..-1] is '='
@@ -269,18 +280,18 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 				# left paren opening function def with optional colon modifier
 				else if (m = /^(:)?\($/.exec word)
 #					if debugCompile then console.log 'lftparen', colon
-					outFunc wordRegEx, not m[1]
+					outFunc word, not m[1]
 
 				# move outer stack items to inner stack, @n
 				else if (matches = /^@(\d*)$/.exec word)
 					out word, 'this.pushOuter( ' + matches[1] + ' );'
 
-				# literal string or push anonymous function, :xxx
-				else if word[0] is ':'
-					sym = encodeSymbol word[1..]
-					out null, 'this.pushFuncOrSym( typeof ' +
-								sym + ' == "undefined" ? null : ' + sym + ', "' + sym + '");'
-					out word, ''
+				# lt modifier to function, xxx<n
+				else if (m = /^(\S+)<(\d*)$/.exec word)
+					[_, front, ltn] = m
+#					if debugCompile then console.log 'lt', {front, ltn}
+					out word, 'this.pushArgsAndExec( ' + sym +
+								(if ltn then ', ' + ltn else '') + ' );'
 
 				# dot modifier to var or function, xxx.
 				else if (m = /^(\S+)(\.)?$/.exec word)
@@ -300,7 +311,8 @@ compileFunc = (funcSrc, pfx = 'this', argCount = 0) ->
 							out null, 'if(typeof fjs_val == "function")'
 							out null, '  fjs_val = fjs_val.apply('
 							out null, '      fjs_ctxtObj, this.curFrame.stack );'
-							out word, 'if(fjs_val != undefined) this.pushReturn(fjs_val);'
+							out word, 'if(fjs_val != undefined) this.pushReturnValue(fjs_val);'
+			wordsInLine = []
 
 	out ')', 'this.funcReturn();'
 	for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'

@@ -4,192 +4,173 @@
 
 module.exports =
 
-	_new_:  (args...) ->
-		if args.length is 0
-			@new @pop()
-		else
-			@new args.pop(), args
+# ------------ PRIMITIVES WITH DEFAULT OF 1 ARGUMENT --------------
 
-	_dot_:  (args...) ->
-		if args.length is 0 then console.log @pop()
-		else console.log args...
-		undefined
-
-	# same as dup for 1 arg
-	# also opposite of rot for more than 2 args
-	swap:  (args...) ->
-		if args.length is 0
-			stack = @stack()
-			if (stkLen = stack.length) > 1
-				top = stack[stkLen-1]
-				stack[stkLen-1] = stack[stkLen-2]
-				stack[stkLen-2] = top
-			undefined
+	_dot_: (args...) ->
+		if @overrideDefault
+			console.log args...
 		else
-			args[-1..-1].concat args[0..-2]
+			console.log args[0]
+			args[1..]
 
-	dup:  (args...) ->
-		if args.length is 0
-			stack = @stack()
-			stack[stack.length-1]
-		else
+	dup: (args...) ->
+		if @overrideDefault
 			args.concat args
-
-	# dup stack[-args.length] on top of stack (stack index)
-	over:  (args...) ->
-		if args.length is 0
-			stack = @stack()
-			if (stkLen = stack.length) > 1 then stack[stkLen-2]
 		else
-			args.concat args[0..0]
+			args[0..0].concat args
 
-	rot:  (args...) ->
-		if args.length is 0
-			stack = @stack()
-			if (stkLen = stack.length) < 3 then exports.swap()
-			else
-				bot = stack[stkLen-3]
-				stack[stkLen-3] = stack[stkLen-2]
-				stack[stkLen-2] = stack[stkLen-1]
-				stack[stkLen-1] = bot
+	drop: (args...) ->
+		if @overrideDefault
 			undefined
 		else
-			args[1..].concat args[0..0]
+			args[1..]
 
-	# also drops args.length items
-	drop:  (args...) ->
-		if args.length is 0 then @pop()
-		undefined
-
-	# + is the only operator that just sums all args
-	_plus_:  (args...) ->
-		if args.length is 0
-			stack = @stack()
-			if (stkLen = stack.length) > 1
-				top = @pop()
-				stack[stkLen-2] = stack[stkLen-2] + top
-				undefined
+	truthy: (args...) ->
+		if @overrideDefault
+			for arg, i in args then if not args[i] then return false
+			true
 		else
+			[ not not args[0] ].concat args[1..]
+
+	not: (args...) ->
+		if @overrideDefault
+			for arg, i in args then args[i] = not args[i]
+			args
+		else
+			[ not args[0] ].concat args[1..]
+
+# ------------ PRIMITIVES WITH DEFAULT OF 2 ARGUMENTS --------------
+
+	# dups second or last arg onto stack top
+	over: (args...) ->
+		if @overrideDefault
+			args[-1..-1].concat args
+		else
+			args[1..1].concat args
+
+	# opposite of rot when more than 2 args
+	swap: (args...) ->
+		if @overrideDefault
+			args[1..-1].concat args[0..0]
+		else
+			args[1..1].concat args[0..0], args[2..]
+
+	_plus_: (args...) ->
+		if @overrideDefault
 			haveStr = no
 			for arg in args then if typeof arg is 'string' then haveStr = yes; break
 			total = (if haveStr then '' else 0)
 			for arg in args then total += arg
 			total
-
-	# negate if stack.length is 1
-	# subtract top from all args below top
-	_dash_:  (args...) ->
-		if (argsLen = args.length) is 0
-			stack = @stack()
-			if (stkLen = stack.length) > 1
-				top = @pop()
-				stack[stkLen-2] = stack[stkLen-2] - top
-			else if stkLen is 1
-				stack[0] = -stack[0]
-			undefined
 		else
-			top = args.pop()
-			for i in [0..argsLen-2] then args[i] -= top
-			args
+			if args.length < 2 then args
+			else [ args[0] + args[1] ].concat args[2..]
 
-	_star_:  (args...) ->
-		if (argsLen = args.length) is 0
-			stack = @stack()
-			if (stkLen = stack.length) > 1
-				top = @pop()
-				stack[stkLen-2] = stack[stkLen-2] * top
-				undefined
+	# negate if args.length is 1
+	# else replace all args below top with top - arg
+	_dash_: (args...) ->
+		if @overrideDefault and args.length > 2
+			total = +args[0]
+			for arg in args[1..] then total -= arg
+			total
 		else
-			top = args.pop()
-			for i in [0..argsLen-2] then args[i] *= top
-			args
+			if args.length < 2 then args
+			else [ args[0] - args[1] ].concat args[2..]
 
-	_slash_:  (args...) ->
-		if (argsLen = args.length) is 0
-			stack = @stack()
-			if (stkLen = stack.length) > 1
-				top = @pop()
-				stack[stkLen-2] = stack[stkLen-2] / top
-			undefined
+	_star_: (args...) ->
+		if @overrideDefault and args.length > 2
+			total = +args[0]
+			for arg, i in args[1..] then total *= arg
+			total
 		else
-			top = args.pop()
-			for i in [0..argsLen-2] then args[i] /= top
-			args
+			if args.length < 2 then args
+			else [ args[0] * args[1] ].concat args[2..]
 
-	# checks if all args are equal
-	_eq_:  (args...) ->
-		if (argsLen = args.length) is 0
-			@pop() is @pop()
+	_slash_: (args...) ->
+		if @overrideDefault and args.length > 2
+			total = +args[0]
+			for arg in args[1..] then total /= arg
+			total
 		else
-			top = args.pop()
-			for i in [0..argsLen-2] then args[i] = args[i] is top
-			args
+			if args.length < 2 then args
+			else [ args[0] / args[1] ].concat args[2..]
 
-	_lt:  (args...) ->
-		if (argsLen = args.length) is 0
-			@pop() > @pop()
+	or: (args...) ->
+		if @overrideDefault
+			for arg, i in args then if args[i] then return true
+			false
 		else
-			top = args.pop()
-			for i in [0..argsLen-2] then args[i] = args[i] < top
-			args
+			if args.length < 2 then args
+			else [ args[0] || args[1] ].concat args[2..]
 
-	_gt_:  (args...) ->
-		if args.length is 0
-			@pop() < @pop()
+	and: (args...) ->
+		if @overrideDefault
+			for arg, i in args then if not args[i] then return false
+			true
 		else
-			top = args.pop()
-			for i in [0..argsLen-2] then args[i] = args[i] > top
-			args
+			if args.length < 2 then args
+			else [ args[0] && args[1] ].concat args[2..]
 
-	truthy:  (args...) ->
-		if (argsLen = args.length) is 0
-			stack = @stack()
-			stkLenM1 = stack.length-1
-			stack[stkLenM1] = not not stack[stkLenM1]
+	# checks if all or top two args are equal
+	_eq_: (args...) ->
+		if @overrideDefault
+			top = args[0]
+			for arg, i in args[1..] then if top isnt arg then return false
+			true
 		else
-			for i in [0..argsLen-1] then args[i] = not not args[i]
-			args
+			if args.length < 2 then true
+			else [ args[0] is args[1] ].concat args[2..]
 
-	not:  (args...) ->
-		if (argsLen = args.length) is 0 then not @pop()
+	_lt_: (args...) ->
+		if @overrideDefault
+			for arg, i in args[1..] then if arg[i-1] >= arg then return false
+			true
 		else
-			for i in [0..argsLen-1] then args[i] = not args[i]
-			args
+			if args.length < 2 then false
+			else [ args[0] < args[1] ].concat args[2..]
 
-	_if_:  (args...) ->
-		if (argsLen = args.length) is 0
-			@pop().call @; cond = @pop()
-			func = @pop()
-			if cond
-				if func.fjs_popArgCount then @pushArgsAndExec func, func.fjs_popArgCount
-				else @execOrPush func
+	_gt_: (args...) ->
+		if @overrideDefault
+			for arg, i in args[1..] then if arg[i-1] <= arg then return false
+			true
 		else
-			args.pop().call @; cond = @pop()
-			if cond
-				for func in args[0..argsLen-2]
-					if func.fjs_popArgCount then @pushArgsAndExec func, func.fjs_popArgCount
-					else @execOrPush func
+			if args.length < 2 then false
+			else [ args[0] > args[1] ].concat args[2..]
+
+	_if_: (args...) ->
+		if typeof args[0] is 'function' and args[0]() or args[0]
+			@args[1].apply @, args[2..]
+		undefined
+
+	doif: (args...) ->
+		if typeof args[1] is 'function' and args[1]() or args[1]
+			@args[0].apply @, args[2..]
 		undefined
 
 	_while_:  ->
-		if (argsLen = args.length) is 0
-			cond = @pop()
-			func = @pop()
-			loop
-				cond?.call @
-				if @pop()
-					@execOrPush.call @, func
-				else
-					break
-		else
-			cond = args.pop()
-			loop
-				cond?.call @
-				if @pop()
-					for func in args[0..argsLen-2]
-						@execOrPush.call @, func
-				else
-					break
+		while args[0]() then @args[1].apply @, args[2..]
 		undefined
+
+	dowhile:  ->
+		while args[1]() then @args[0].apply @, args[2..]
+		undefined
+
+
+# ------------ PRIMITIVES WITH DEFAULT OF 3 ARGUMENTS --------------
+	rot: (args...) ->
+		if @overrideDefault
+			args[-1..-1].concat args[0..-2]
+		else
+			args[2..2].concat args[0..1], args[3..]
+
+
+# ------------ PRIMITIVES WITH DEFAULT OF ALL ARGUMENTS --------------
+
+	_new_: (args...) ->
+		constructor = args[0]
+		argsArr = []
+		for arg, i in args[1..] then argsArr.push 'args[' + i + ']'
+		eval 'new constructor(' + argsArr.join(',') + ')'
+
 
 exports._throw_  = -> throw JSON.stringify @
