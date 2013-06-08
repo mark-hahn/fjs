@@ -8,107 +8,92 @@
   var __slice = [].slice;
 
   module.exports = {
-    _new_: function() {
-      var args;
-
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        return this["new"](this.pop());
-      } else {
-        return this["new"](args.pop(), args);
-      }
-    },
     _dot_: function() {
       var args;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        console.log(this.pop());
+      if (this.overrideDefault) {
+        return console.log.apply(console, args);
       } else {
-        console.log.apply(console, args);
-      }
-      return void 0;
-    },
-    swap: function() {
-      var args, stack, stkLen, top;
-
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        stack = this.stack();
-        if ((stkLen = stack.length) > 1) {
-          top = stack[stkLen - 1];
-          stack[stkLen - 1] = stack[stkLen - 2];
-          stack[stkLen - 2] = top;
-        }
-        return void 0;
-      } else {
-        return args.slice(-1).concat(args.slice(0, -1));
+        console.log(args[0]);
+        return args.slice(1);
       }
     },
     dup: function() {
-      var args, stack;
+      var args;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        stack = this.stack();
-        return stack[stack.length - 1];
-      } else {
+      if (this.overrideDefault) {
         return args.concat(args);
-      }
-    },
-    over: function() {
-      var args, stack, stkLen;
-
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        stack = this.stack();
-        if ((stkLen = stack.length) > 1) {
-          return stack[stkLen - 2];
-        }
       } else {
-        return args.concat(args.slice(0, 1));
-      }
-    },
-    rot: function() {
-      var args, bot, stack, stkLen;
-
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        stack = this.stack();
-        if ((stkLen = stack.length) < 3) {
-          exports.swap();
-        } else {
-          bot = stack[stkLen - 3];
-          stack[stkLen - 3] = stack[stkLen - 2];
-          stack[stkLen - 2] = stack[stkLen - 1];
-          stack[stkLen - 1] = bot;
-        }
-        return void 0;
-      } else {
-        return args.slice(1).concat(args.slice(0, 1));
+        return args.slice(0, 1).concat(args);
       }
     },
     drop: function() {
       var args;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        this.pop();
+      if (this.overrideDefault) {
+        return void 0;
+      } else {
+        return args.slice(1);
       }
-      return void 0;
     },
-    _plus_: function() {
-      var arg, args, haveStr, stack, stkLen, top, total, _i, _j, _len, _len1;
+    truthy: function() {
+      var arg, args, i, _i, _len;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        stack = this.stack();
-        if ((stkLen = stack.length) > 1) {
-          top = this.pop();
-          stack[stkLen - 2] = stack[stkLen - 2] + top;
-          return void 0;
+      if (this.overrideDefault) {
+        for (i = _i = 0, _len = args.length; _i < _len; i = ++_i) {
+          arg = args[i];
+          if (!args[i]) {
+            return false;
+          }
         }
+        return true;
       } else {
+        return [!!args[0]].concat(args.slice(1));
+      }
+    },
+    not: function() {
+      var arg, args, i, _i, _len;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
+        for (i = _i = 0, _len = args.length; _i < _len; i = ++_i) {
+          arg = args[i];
+          args[i] = !args[i];
+        }
+        return args;
+      } else {
+        return [!args[0]].concat(args.slice(1));
+      }
+    },
+    over: function() {
+      var args;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
+        return args.slice(-1).concat(args);
+      } else {
+        return args.slice(1, 2).concat(args);
+      }
+    },
+    swap: function() {
+      var args;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
+        return args.slice(1).concat(args.slice(0, 1));
+      } else {
+        return args.slice(1, 2).concat(args.slice(0, 1), args.slice(2));
+      }
+    },
+    _plus_: function() {
+      var arg, args, haveStr, total, _i, _j, _len, _len1;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
         haveStr = false;
         for (_i = 0, _len = args.length; _i < _len; _i++) {
           arg = args[_i];
@@ -123,203 +108,230 @@
           total += arg;
         }
         return total;
+      } else {
+        if (args.length < 2) {
+          return args;
+        } else {
+          return [args[0] + args[1]].concat(args.slice(2));
+        }
       }
     },
     _dash_: function() {
-      var args, argsLen, i, stack, stkLen, top, _i, _ref;
+      var arg, args, total, _i, _len, _ref;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if ((argsLen = args.length) === 0) {
-        stack = this.stack();
-        if ((stkLen = stack.length) > 1) {
-          top = this.pop();
-          stack[stkLen - 2] = stack[stkLen - 2] - top;
-        } else if (stkLen === 1) {
-          stack[0] = -stack[0];
+      if (this.overrideDefault && args.length > 2) {
+        total = +args[0];
+        _ref = args.slice(1);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          arg = _ref[_i];
+          total -= arg;
         }
-        return void 0;
+        return total;
       } else {
-        top = args.pop();
-        for (i = _i = 0, _ref = argsLen - 2; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          args[i] -= top;
+        if (args.length < 2) {
+          return args;
+        } else {
+          return [args[0] - args[1]].concat(args.slice(2));
         }
-        return args;
       }
     },
     _star_: function() {
-      var args, argsLen, i, stack, stkLen, top, _i, _ref;
+      var arg, args, i, total, _i, _len, _ref;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if ((argsLen = args.length) === 0) {
-        stack = this.stack();
-        if ((stkLen = stack.length) > 1) {
-          top = this.pop();
-          stack[stkLen - 2] = stack[stkLen - 2] * top;
-          return void 0;
+      if (this.overrideDefault && args.length > 2) {
+        total = +args[0];
+        _ref = args.slice(1);
+        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+          arg = _ref[i];
+          total *= arg;
         }
+        return total;
       } else {
-        top = args.pop();
-        for (i = _i = 0, _ref = argsLen - 2; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          args[i] *= top;
+        if (args.length < 2) {
+          return args;
+        } else {
+          return [args[0] * args[1]].concat(args.slice(2));
         }
-        return args;
       }
     },
     _slash_: function() {
-      var args, argsLen, i, stack, stkLen, top, _i, _ref;
+      var arg, args, total, _i, _len, _ref;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if ((argsLen = args.length) === 0) {
-        stack = this.stack();
-        if ((stkLen = stack.length) > 1) {
-          top = this.pop();
-          stack[stkLen - 2] = stack[stkLen - 2] / top;
+      if (this.overrideDefault && args.length > 2) {
+        total = +args[0];
+        _ref = args.slice(1);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          arg = _ref[_i];
+          total /= arg;
         }
-        return void 0;
+        return total;
       } else {
-        top = args.pop();
-        for (i = _i = 0, _ref = argsLen - 2; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          args[i] /= top;
+        if (args.length < 2) {
+          return args;
+        } else {
+          return [args[0] / args[1]].concat(args.slice(2));
         }
-        return args;
+      }
+    },
+    or: function() {
+      var arg, args, i, _i, _len;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
+        for (i = _i = 0, _len = args.length; _i < _len; i = ++_i) {
+          arg = args[i];
+          if (args[i]) {
+            return true;
+          }
+        }
+        return false;
+      } else {
+        if (args.length < 2) {
+          return args;
+        } else {
+          return [args[0] || args[1]].concat(args.slice(2));
+        }
+      }
+    },
+    and: function() {
+      var arg, args, i, _i, _len;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
+        for (i = _i = 0, _len = args.length; _i < _len; i = ++_i) {
+          arg = args[i];
+          if (!args[i]) {
+            return false;
+          }
+        }
+        return true;
+      } else {
+        if (args.length < 2) {
+          return args;
+        } else {
+          return [args[0] && args[1]].concat(args.slice(2));
+        }
       }
     },
     _eq_: function() {
-      var args, argsLen, i, top, _i, _ref;
+      var arg, args, i, top, _i, _len, _ref;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if ((argsLen = args.length) === 0) {
-        return this.pop() === this.pop();
-      } else {
-        top = args.pop();
-        for (i = _i = 0, _ref = argsLen - 2; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          args[i] = args[i] === top;
+      if (this.overrideDefault) {
+        top = args[0];
+        _ref = args.slice(1);
+        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+          arg = _ref[i];
+          if (top !== arg) {
+            return false;
+          }
         }
-        return args;
+        return true;
+      } else {
+        if (args.length < 2) {
+          return true;
+        } else {
+          return [args[0] === args[1]].concat(args.slice(2));
+        }
       }
     },
-    _lt: function() {
-      var args, argsLen, i, top, _i, _ref;
+    _lt_: function() {
+      var arg, args, i, _i, _len, _ref;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if ((argsLen = args.length) === 0) {
-        return this.pop() > this.pop();
-      } else {
-        top = args.pop();
-        for (i = _i = 0, _ref = argsLen - 2; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          args[i] = args[i] < top;
+      if (this.overrideDefault) {
+        _ref = args.slice(1);
+        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+          arg = _ref[i];
+          if (arg[i - 1] >= arg) {
+            return false;
+          }
         }
-        return args;
+        return true;
+      } else {
+        if (args.length < 2) {
+          return false;
+        } else {
+          return [args[0] < args[1]].concat(args.slice(2));
+        }
       }
     },
     _gt_: function() {
-      var args, i, top, _i, _ref;
+      var arg, args, i, _i, _len, _ref;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (args.length === 0) {
-        return this.pop() < this.pop();
-      } else {
-        top = args.pop();
-        for (i = _i = 0, _ref = argsLen - 2; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          args[i] = args[i] > top;
+      if (this.overrideDefault) {
+        _ref = args.slice(1);
+        for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+          arg = _ref[i];
+          if (arg[i - 1] <= arg) {
+            return false;
+          }
         }
-        return args;
-      }
-    },
-    truthy: function() {
-      var args, argsLen, i, stack, stkLenM1, _i, _ref;
-
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if ((argsLen = args.length) === 0) {
-        stack = this.stack();
-        stkLenM1 = stack.length - 1;
-        return stack[stkLenM1] = !!stack[stkLenM1];
+        return true;
       } else {
-        for (i = _i = 0, _ref = argsLen - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          args[i] = !!args[i];
+        if (args.length < 2) {
+          return false;
+        } else {
+          return [args[0] > args[1]].concat(args.slice(2));
         }
-        return args;
-      }
-    },
-    not: function() {
-      var args, argsLen, i, _i, _ref;
-
-      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if ((argsLen = args.length) === 0) {
-        return !this.pop();
-      } else {
-        for (i = _i = 0, _ref = argsLen - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          args[i] = !args[i];
-        }
-        return args;
       }
     },
     _if_: function() {
-      var args, argsLen, cond, func, _i, _len, _ref;
+      var args;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if ((argsLen = args.length) === 0) {
-        this.pop().call(this);
-        cond = this.pop();
-        func = this.pop();
-        if (cond) {
-          if (func.fjs_popArgCount) {
-            this.pushArgsAndExec(func, func.fjs_popArgCount);
-          } else {
-            this.execOrPush(func);
-          }
-        }
-      } else {
-        args.pop().call(this);
-        cond = this.pop();
-        if (cond) {
-          _ref = args.slice(0, +(argsLen - 2) + 1 || 9e9);
-          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-            func = _ref[_i];
-            if (func.fjs_popArgCount) {
-              this.pushArgsAndExec(func, func.fjs_popArgCount);
-            } else {
-              this.execOrPush(func);
-            }
-          }
-        }
+      if (typeof args[0] === 'function' && args[0]() || args[0]) {
+        this.args[1].apply(this, args.slice(2));
+      }
+      return void 0;
+    },
+    doif: function() {
+      var args;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (typeof args[1] === 'function' && args[1]() || args[1]) {
+        this.args[0].apply(this, args.slice(2));
       }
       return void 0;
     },
     _while_: function() {
-      var argsLen, cond, func, _i, _len, _ref;
-
-      if ((argsLen = args.length) === 0) {
-        cond = this.pop();
-        func = this.pop();
-        while (true) {
-          if (cond != null) {
-            cond.call(this);
-          }
-          if (this.pop()) {
-            this.execOrPush.call(this, func);
-          } else {
-            break;
-          }
-        }
-      } else {
-        cond = args.pop();
-        while (true) {
-          if (cond != null) {
-            cond.call(this);
-          }
-          if (this.pop()) {
-            _ref = args.slice(0, +(argsLen - 2) + 1 || 9e9);
-            for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-              func = _ref[_i];
-              this.execOrPush.call(this, func);
-            }
-          } else {
-            break;
-          }
-        }
+      while (args[0]()) {
+        this.args[1].apply(this, args.slice(2));
       }
       return void 0;
+    },
+    dowhile: function() {
+      while (args[1]()) {
+        this.args[0].apply(this, args.slice(2));
+      }
+      return void 0;
+    },
+    rot: function() {
+      var args;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
+        return args.slice(-1).concat(args.slice(0, -1));
+      } else {
+        return args.slice(2, 3).concat(args.slice(0, 2), args.slice(3));
+      }
+    },
+    _new_: function() {
+      var arg, args, argsArr, constructor, i, _i, _len, _ref;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      constructor = args[0];
+      argsArr = [];
+      _ref = args.slice(1);
+      for (i = _i = 0, _len = _ref.length; _i < _len; i = ++_i) {
+        arg = _ref[i];
+        argsArr.push('args[' + i + ']');
+      }
+      return eval('new constructor(' + argsArr.join(',') + ')');
     }
   };
 

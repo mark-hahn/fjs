@@ -15,7 +15,7 @@ path = process.argv[2]
 longPad = ''; for i in [0..25] then longPad += '     '
 
 withStmntStack 	= []
-localVarStack   = []
+localVarStack   = [{}]
 
 depth 			= 0
 haveDbgInspect 	= no
@@ -26,33 +26,40 @@ funcOut = "\n// File #{path} compiled by FJS version #{version} " +
 
 ########### compile function ############
 
-compileFunc = (funcSrc, pfx = 'this') ->
+compileFunc = (funcSrc, funcWordIdx, pfx) ->
 
 
-	#################### find span routines #####################
+	#################### span routines #####################
 
 	getString = (word, regex) ->
 		delim = word[0]
 		out = delim
-		i = regex.lastIndex - word.length + 1
+		i = regex.lastIndex
+
 		while i < funcSrc.length
 			chr0 = funcSrc[i]
 			chr1 = funcSrc[i+1] ? ' '
+
 			if chr0 is '\\'
 				out += chr0 + chr1
 				i += 2
 				continue
+
 			out += chr0
+
 			if chr0 is delim and /\s/.test chr1
 				regex.lastIndex = i + 1
 				return out
+
 			i++
+
 		throw new Exception 'Unterminated string'
 
 	getFuncString = (word, regex) ->
 		out = word
 
 		i = regex.lastIndex
+
 		while i < funcSrc.length
 			chr0 = funcSrc[i]
 			chr1 = funcSrc[i+1] ? ' '
@@ -64,14 +71,14 @@ compileFunc = (funcSrc, pfx = 'this') ->
 				i += 2
 				continue
 
-			if /\s/.test(chr0)
-				if chr0 is '/' and chr1 is '/'
+			if /\s/.test chr0
+				if chr1 is '/' and chr2 is '/'
 					while ++i < funcSrc.length and funcSrc[i] isnt '\n' then
 					continue
 
 				else if chr1 in ['"', "'", "`"]
 					regex.lastIndex = i + 2
-					out += chr0 + getString chr1, regex
+					out += chr0 + (gs = getString chr1, regex)
 					i = regex.lastIndex
 					continue
 
@@ -87,15 +94,53 @@ compileFunc = (funcSrc, pfx = 'this') ->
 					i = regex.lastIndex
 					continue
 
-				else if chr1 is ')' and /\s/.test(chr2)
-					regex.lastIndex = i + 2
-					return out + chr0 + ')'
+				else if chr1 is ')'
+					wsIdx = i
+					while ++wsIdx < funcSrc.length and /\S/.test funcSrc[wsIdx] then
+					regex.lastIndex = wsIdx
+					return out + funcSrc[i...wsIdx]
 
 			out += chr0
 			i++
 
 		throw new Exception 'Unmatched left paren'
 
+
+	#################### parse words routine #####################
+
+	parseWords = (wordRegEx) ->
+
+		wordsInLine = []
+		matches     = true
+
+		while wordsInLine.length is 0 and matches
+
+			while (matches = wordRegEx.exec funcSrc)
+				[_, wordMatch, whiteSpace] = matches
+
+				if (comment = (wordMatch[0..1] is '//'))
+					eolRegex = /\n|$/g
+					eolRegex.lastIndex = wordRegEx.lastIndex
+					eolRegex.exec funcSrc
+					wordRegEx.lastIndex = eolRegex.lastIndex
+				else
+					# string constant
+					if wordMatch[0] in ['"', "'", "`"]
+						wordRegEx.lastIndex =
+							wordRegEx.lastIndex - wordMatch.length - whiteSpace.length + 1
+						wordMatch = getString wordMatch, wordRegEx
+						whiteSpace = funcSrc[wordRegEx.lastIndex]
+
+					else if /^:?\($/.test wordMatch
+						wordRegEx.lastIndex = wordRegEx.lastIndex - whiteSpace.length
+						wordMatch  = getFuncString wordMatch, wordRegEx
+						whiteSpace = funcSrc[wordRegEx.lastIndex]
+
+					wordsInLine.unshift wordMatch
+
+				if comment or not whiteSpace or /\n/.test whiteSpace then break
+
+		wordsInLine
 
 	#################### emit routines #####################
 
@@ -111,10 +156,7 @@ compileFunc = (funcSrc, pfx = 'this') ->
 		else
 			funcOut += str + '\n'
 
-	outFunc = (word, exec = yes) ->
-
-		if debugCompile then console.log 'outFunc', word.length, exec
-
+	outFunc = (word, funcWordIdx, exec = yes) ->
 		if exec
 			out null, '( function(){'
 		else
@@ -122,7 +164,7 @@ compileFunc = (funcSrc, pfx = 'this') ->
 
 		depth++
 
-		compileFunc word
+		compileFunc word, funcWordIdx, 'this'
 
 		depth--
 		out null, '}'
@@ -162,40 +204,33 @@ compileFunc = (funcSrc, pfx = 'this') ->
 
 	#################### find new local vars #####################
 
-	localVars = {}
-	wordsInLine = []
+	localVarIndexes = {}
 
 	wordRegEx = new RegExp '(\\S+)(\\s*)', 'g'
-	while (matches = wordRegEx.exec funcSrc)
-		[_, wordMatch, whiteSpace] = matches
+	wordIdx   = -1
 
-		wordsInLine.push wordMatch
+	while (wordsInLine = parseWords wordRegEx).length
 
-		if not whiteSpace or /\n/.test whiteSpace or wordRegEx.lastIndex is funcSrc.length
-			wordsInLine.reverse()
+		for word in wordsInLine
+			wordIdx++
+			if word not in ['=', '>=', '<=', 'not='] and
+					word[-1..-1] is '=' and
+					not /\./.test word
+				word = word[0..-2]
+				exists = no
+				for varSet in localVarStack
+					if varSet[word]
+						exists = yes
+						break
+				if not exists and not localVarIndexes[word]
+					localVarIndexes[word] = wordIdx
 
-			for word in wordsInLine
-				if /^\d*>\(|:?\(<\d*$/.test(word) or word in ['(', ':('] then break
-
-				if word not in ['=', '>='] and word[-1..-1] is '='
-					word = word[0..-2]
-					exists = no
-					for varSet in localVarStack ? []
-						if varSet[word] then exists = yes; break
-
-					if not exists then localVars[word] = yes
-
-			wordsInLine = []
-
-#	if debugCompile then console.log 'localVars', localVars
-
-	localVarStack.push localVars
-
+	localVarStack.push localVarIndexes
 
 	#################### emit function overhead #####################
 
 	localVarsArr = []
-	for localVar of localVars then localVarsArr.push encodeSymbol localVar
+	for localVar of localVarIndexes then localVarsArr.push encodeSymbol localVar
 	if localVarsArr.length
 		out null, 'var ' + localVarsArr.join(', ') + ';'
 
@@ -213,106 +248,88 @@ compileFunc = (funcSrc, pfx = 'this') ->
 
 	#################### emit js code word by word #####################
 
-	wordsInLine = []
-
 	wordRegEx = new RegExp '(\\S+)(\\s*)', 'g'
+	wordIdx   = -1
 
-	while (matches = wordRegEx.exec funcSrc)
-		[_, wordMatch, whiteSpace] = matches
+	while (wordsInLine = parseWords wordRegEx).length
 
-		if not (comment = (wordMatch[0..1] is '//'))
+		for word in wordsInLine
+			wordIdx++
 
-			# string constant
-			if wordMatch[0] in ['"', "'", "`"]
-				wordMatch = getString wordMatch, wordRegEx
+			if debugCompile then console.log '- word:', wordIdx, word[0..60]
 
-			else if /^:?\($/.test wordMatch
-				wordMatch = getFuncString wordMatch, wordRegEx
+			if word[0..4] is 'with:'
+				topIdx = withStmntStack.length-1
+				sym = encodeSymbol word[5..]
+				withStmntStack[topIdx].push sym
+				out null, 'with( ' + sym + ' ) {'
+				depth++
 
-			wordsInLine.push wordMatch
+			else if word[0..6] is 'typeof:'
+				sym = encodeSymbol word[7..]
+				out word, 'this.push( typeof ' + sym + ' );'
+				depth++
 
-		if comment or not whiteSpace or /\n/.test(whiteSpace) or
-							wordRegEx.lastIndex is funcSrc.length
-			wordsInLine.reverse()
+			else if word[0..10] is 'instanceof:'
+				sym = encodeSymbol word[11..]
+				out word, 'this.push( this.pop() instanceof ' + sym + ' );'
+				depth++
 
-			for word in wordsInLine
-				if debugCompile then console.log 'word: ', word[0..20]
+			else if word is 'cb'
+				out word, 'this.pushCB(' +
+							(if debugRuntime then 'fjsInspect' else 'null') + ');'
 
-				if word[0..4] is 'with:'
-					topIdx = withStmntStack.length-1
-					sym = encodeSymbol word[5..]
-					withStmntStack[topIdx].push sym
-					out null, 'with( ' + sym + ' ) {'
+			else if word is 'wait'
+				out word, 'this.wait();'
+				for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
+				depth--
+				out null, '}, function() {'
+				depth++
+				for w in  withStmntStack[withStmntStack.length-1]
+					out null, 'with( ' + encodeSymbol(w) + ' ) {'
 					depth++
 
-				else if word[0..6] is 'typeof:'
-					sym = encodeSymbol word[7..]
-					out word, 'this.push( typeof ' + sym + ' );'
-					depth++
+			# literal string
+			else if word[0] is ':'
+				out word, 'this.push( "' + (word[1..].replace /"/g, '\\"' )  + '" );'
 
-				else if word[0..10] is 'instanceof:'
-					sym = encodeSymbol word[11..]
-					out word, 'this.push( this.pop() instanceof ' + sym + ' );'
-					depth++
+			# var assignment, xxx=
+			else if word.length > 1 and word[-1..-1] is '='
+				out word, (sym = encodeSymbol(word[0..-2])) + ' = this.pop();'
+				localVarStack[-1..-1][0][sym] = true
 
-				else if word is 'cb'
-					out word, 'this.pushCB(' +
-								(if debugRuntime then 'fjsInspect' else 'null') + ');'
+			# left paren opening function def with optional colon modifier
+			else if (m = /^(:)?\($/.exec word)
+				outFunc word, wordIdx, not m[1]
 
-				else if word is 'wait'
-					out word, 'this.wait();'
-					for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
-					depth--
-					out null, '}, function() {'
-					depth++
-					for w in  withStmntStack[withStmntStack.length-1]
-						out null, 'with( ' + encodeSymbol(w) + ' ) {'
-						depth++
+			# move outer stack items to inner stack, @n
+			else if (matches = /^@(\d*)$/.exec word)
+				out word, 'this.pushOuter( ' + matches[1] + ' );'
 
-				# literal string
-				else if word[0] is ':'
-					out word, 'this.push( "' + (word[1..].replace /"/g, '\\"' )  + '" );'
+			# lt modifier to function, xxx<n
+			else if (m = /^(\S+)<(\d*)$/.exec word)
+				[_, front, ltn] = m
+				out word, 'this.pushArgsAndExec( ' + sym +
+							(if ltn then ', ' + ltn else '') + ' );'
 
-				# var assignment, xxx=
-				else if word.length > 1 and word[-1..-1] is '='
-					out word, encodeSymbol(word[0..-2]) + ' = this.pop();'
+			# dot modifier to var or function, xxx.
+			else if (m = /^(\S+)(\.)?$/.exec word)
+				[_, front, dot] = m
 
-				# left paren opening function def with optional colon modifier
-				else if (m = /^(:)?\($/.exec word)
-#					if debugCompile then console.log 'lftparen', colon
-					outFunc word, not m[1]
-
-				# move outer stack items to inner stack, @n
-				else if (matches = /^@(\d*)$/.exec word)
-					out word, 'this.pushOuter( ' + matches[1] + ' );'
-
-				# lt modifier to function, xxx<n
-				else if (m = /^(\S+)<(\d*)$/.exec word)
-					[_, front, ltn] = m
-#					if debugCompile then console.log 'lt', {front, ltn}
-					out word, 'this.pushArgsAndExec( ' + sym +
-								(if ltn then ', ' + ltn else '') + ' );'
-
-				# dot modifier to var or function, xxx.
-				else if (m = /^(\S+)(\.)?$/.exec word)
-					[_, front, dot] = m
-#					if debugCompile then console.log 'dot', {front, dot}
-
-					if not front
-						if dot
-							out '.', 'this.execOrPush( _dot_ );'
+				if not front
+					if dot
+						out '.', 'this.execOrPush( _dot_ );'
+				else
+					sym = encodeSymbol front
+					if not dot
+						out word, 'this.execOrPush( ' + sym + ' );'
 					else
-						sym = encodeSymbol front
-						if not dot
-							out word, 'this.execOrPush( ' + sym + ' );'
-						else
-							out null, 'fjs_ctxtObj = this.pop();'
-							out null, 'fjs_val = fjs_ctxtObj.' + sym + ';'
-							out null, 'if(typeof fjs_val == "function")'
-							out null, '  fjs_val = fjs_val.apply('
-							out null, '      fjs_ctxtObj, this.curFrame.stack );'
-							out word, 'if(fjs_val != undefined) this.pushReturnValue(fjs_val);'
-			wordsInLine = []
+						out null, 'fjs_ctxtObj = this.pop();'
+						out null, 'fjs_val = fjs_ctxtObj.' + sym + ';'
+						out null, 'if(typeof fjs_val == "function")'
+						out null, '  fjs_val = fjs_val.apply('
+						out null, '      fjs_ctxtObj, this.curFrame.stack );'
+						out word, 'if(fjs_val != undefined) this.pushReturnValue(fjs_val);'
 
 	out ')', 'this.funcReturn();'
 	for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
@@ -328,7 +345,7 @@ compileFunc = (funcSrc, pfx = 'this') ->
 
 	depth--
 	out null, ');'
-	if debugCompile then console.log 'word:  )'
+	if debugCompile then console.log '- word: ' + (wordIdx+1) + ' )'
 
 
 ############################ SYMBOL ENCODING ############################
@@ -379,6 +396,6 @@ decodeSymbol = (str) ->
 src = "with:fjs-primitives  fjs-primitives=  require './fjs-primitives'\n\n" +
 	  	fs.readFileSync(path + '.fjs').toString()
 
-compileFunc src, "require('./fjs-runtime')"
+compileFunc src, 0, "require('./fjs-runtime')"
 
 fs.writeFile path + '.js', funcOut

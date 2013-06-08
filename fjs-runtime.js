@@ -43,7 +43,7 @@
     };
 
     Context.prototype.pop = function() {
-      return this.curFrame.stack.pop();
+      return this.curFrame.stack.shift();
     };
 
     Context.prototype.popAll = function() {
@@ -56,11 +56,11 @@
 
     Context.prototype.popN = function(n) {
       n || (n = this.curFrame.stack.length);
-      return this.curFrame.stack.splice(-n, n);
+      return this.curFrame.stack.splice(0, n);
     };
 
     Context.prototype.push = function(v) {
-      return this.curFrame.stack.push(v);
+      return this.curFrame.stack.unshift(v);
     };
 
     Context.prototype.pushOuter = function(n) {
@@ -68,8 +68,8 @@
 
       outerStk = this.frames[this.frames.length - 1].stack;
       n || (n = outerStk.length);
-      items = outerStk.splice(-n, n);
-      return this.curFrame.stack = this.curFrame.stack.concat(items);
+      items = outerStk.splice(0, n);
+      return this.curFrame.stack = items.concat(this.curFrame.stack);
     };
 
     Context.prototype["new"] = function(Class, args) {
@@ -84,18 +84,8 @@
       })();
     };
 
-    Context.prototype.pushArgsAndExec = function(f, n) {
-      var res;
-
-      n || (n = this.curFrame.stack.length);
-      res = f.apply(this, this.curFrame.stack.splice(-n, n));
-      if (res !== void 0) {
-        return this.curFrame.stack.push(res);
-      }
-    };
-
     Context.prototype.pushArray = function(array) {
-      return this.curFrame.stack = this.curFrame.stack.concat(array);
+      return this.curFrame.stack = array.concat(this.curFrame.stack);
     };
 
     Context.prototype.pushReturnValue = function(val) {
@@ -105,23 +95,35 @@
       if (val instanceof Array) {
         return this.pushArray(val);
       } else if (toString.call(val) === '[object Arguments]') {
-        return this.curFrame.stack.push(Array.prototype.slice(call(val)));
+        return this.pushArray(Array.prototype.slice(call(val)));
       } else {
-        return this.curFrame.stack.push(val);
+        return this.curFrame.stack.unshift(val);
       }
     };
 
-    Context.prototype.execOrPush = function(v) {
-      var res;
+    Context.prototype.pushArgsAndExec = function(f, n) {
+      if (n == null) {
+        n = this.curFrame.stack.length;
+      }
+      this.overrideDefault = true;
+      this.pushReturnValue(f.apply(this, this.curFrame.stack.splice(0, n)));
+      return delete this.overrideDefault;
+    };
 
-      res = typeof v === 'function' ? v.call(this) : v;
-      if (res !== void 0) {
-        return this.curFrame.stack.push(res);
+    Context.prototype.execOrPush = function(word) {
+      var stk;
+
+      if (typeof word === 'function') {
+        stk = this.curFrame.stack;
+        this.curFrame.stack = [];
+        return this.pushReturnValue(word.apply(this, stk));
+      } else {
+        return this.push(word);
       }
     };
 
     Context.prototype.pushCB = function(debugFunc) {
-      this.curFrame.stack.push(this._callback.bind(this, debugFunc));
+      this.curFrame.stack.unshift(this._callback.bind(this, debugFunc));
       return this.callbacksPending++;
     };
 
@@ -134,7 +136,7 @@
       }
       ctxt = (this.callbacksPending === 0 ? this : ctxt = this.savedCtxt);
       this.savedCtxt = ctxt.clone();
-      ctxt.curFrame.stack = ctxt.curFrame.stack.concat(args);
+      ctxt.curFrame.stack = args.concat(ctxt.curFrame.stack);
       if (debugFunc) {
         console.log();
         debugFunc.call(ctxt, '<callback>');
@@ -168,7 +170,7 @@
 
       stack = this.curFrame.stack;
       if ((this.curFrame = this.frames.pop())) {
-        return this.curFrame.stack = this.curFrame.stack.concat(stack);
+        return this.curFrame.stack = stack.concat(this.curFrame.stack);
       }
     };
 

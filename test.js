@@ -1,307 +1,338 @@
 
-// File test compiled by FJS version 0.1.0 on Thu Jun 06 2013 11:21
+// File test compiled by FJS version 0.1.0 on Fri Jun 07 2013 18:08
 
-var fjs_dash_primitives, x, y, fs, obj;
+var fjs_dash_primitives, x, printGreeting, fs, obj, prt1, y;
 require('./fjs-runtime').funcCall( null,
   [
     function() {
-      this.execOrPush( _tick_js_dash_primitives_tick_ );                    /* 'js-primitives' */
+      this.execOrPush( _tick_._slash_fjs_dash_primitives_tick_ );           /* './fjs-primitives' */
       this.execOrPush( require );                                           /* require */
       fjs_dash_primitives = this.pop();                                     /* fjs-primitives= */
       with( fjs_dash_primitives ) {
-        this.execOrPush( _dash__dash__dash__dash__dash__dash__dash__dash_ ); /* -------- */
-        this.execOrPush( docs );                                            /* docs */
-        this.execOrPush( the );                                             /* the */
-        this.execOrPush( from );                                            /* from */
-        this.execOrPush( Examples );                                        /* Examples */
-        this.execOrPush( _dash__dash__dash__dash__dash__dash__dash__dash_ ); /* -------- */
-        this.execOrPush( drop_star_ );                                      /* drop* */
+        this.pushArgsAndExec( fjs_dash_primitives );                        /* drop< */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( drop_star_ );                                      /* drop* */
         this.execOrPush( _dot_ );                                           /* . */
+        this.pushArgsAndExec( _dot_ );                                      /* drop< */
         this.execOrPush( _dot_ );                                           /* . */
         this.execOrPush( 1 );                                               /* 1 */
         this.execOrPush( 1 );                                               /* 1 */
         this.execOrPush( _plus_ );                                          /* + */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( stdout );                                          /* stdout */
-        this.execOrPush( on );                                              /* on */
-        this.execOrPush( _quot__quot_ );                                    /* "" */
-        this.execOrPush( prints );                                          /* prints */
         this.execOrPush( 1 );                                               /* 1 */
         this.execOrPush( 1 );                                               /* 1 */
         this.execOrPush( _star_ );                                          /* * */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( stdout );                                          /* stdout */
-        this.execOrPush( on );                                              /* on */
-        this.execOrPush( _quot__quot_ );                                    /* "" */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( drop_star_ );                                      /* drop* */
+        this.pushArgsAndExec( _dot_ );                                      /* drop< */
         this.execOrPush( _dot_ );                                           /* . */
         this.execOrPush( 3 );                                               /* 3 */
         x = this.pop();                                                     /* x= */
         this.execOrPush( x );                                               /* x */
-        this.execOrPush( variable );                                        /* variable */
-        this.execOrPush( to );                                              /* to */
-        this.execOrPush( 3 );                                               /* 3 */
-        this.execOrPush( assign );                                          /* assign */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.pushArgsAndExec( _dot_ );                                      /* drop< */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.push( "( . \"hello world\" )" );                               /* :( . "hello world" ) */
+        printGreeting = this.pop();                                         /* printGreeting= */
+        this.execOrPush( printGreeting );                                   /* printGreeting */
+        this.pushArgsAndExec( printGreeting );                              /* drop< */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.execOrPush( 1 );                                               /* 1 */
+        x = this.pop();                                                     /* x= */
         this.execOrPush( x );                                               /* x */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( drop_star_ );                                      /* drop* */
+        this.execOrPush( 1 );                                               /* 1 */
+        x = this.pop();                                                     /* x= */
+        this.push( "x" );                                                   /* :x */
         this.execOrPush( _dot_ );                                           /* . */
-        this.push( ":(. \"hello world\" )" );                               /* :(. "hello world" ) */
-        printGreeting = this.pop();                                         /* printGreeting= */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( function_comma_ );                                 /* function, */
-        this.execOrPush( runs );                                            /* runs */
-        this.execOrPush( and );                                             /* and */
-        this.execOrPush( creates );                                         /* creates */
-        this.execOrPush( variable );                                        /* variable */
-        this.execOrPush( a );                                               /* a */
-        this.execOrPush( to );                                              /* to */
-        this.execOrPush( it );                                              /* it */
-        this.execOrPush( assigns );                                         /* assigns */
-        this.execOrPush( and );                                             /* and */
-        this.execOrPush( function );                                        /* function */
-        this.execOrPush( creates );                                         /* creates */
-        this.execOrPush( printGreeting );                                   /* printGreeting */
-        this.execOrPush( drop_star_ );                                      /* drop* */
+        this.execOrPush( Math.min );                                        /* Math.min */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( function_comma_ );                                 /* function, */
-        this.execOrPush( runs );                                            /* runs */
+        this.push( "Math.min" );                                            /* :Math.min */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.push( "( + 1 2 )" );                                           /* :( + 1 2 ) */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.pushArgsAndExec( _dot_ );                                      /* drop< */
+        this.execOrPush( _dot_ );                                           /* . */
         this.execOrPush( 3 );                                               /* 3 */
         this.execOrPush( 2 );                                               /* 2 */
         this.execOrPush( 1 );                                               /* 1 */
         this.execOrPush( Math.min );                                        /* Math.min */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( stack );                                           /* stack */
-        this.execOrPush( empty );                                           /* empty */
-        this.execOrPush( Leaves );                                          /* Leaves */
-        this.execOrPush( _num_2_rparen__rparen_ );                          /* 2)) */
-        this.execOrPush( _num_3_comma_ );                                   /* 3, */
-        this.execOrPush( _lparen_Math.max_lparen_1_comma_ );                /* (Math.max(1, */
-        this.execOrPush( _quot__quot_ );                                    /* "" */
-        this.execOrPush( prints );                                          /* prints */
         this.execOrPush( 3 );                                               /* 3 */
         this.execOrPush( 2 );                                               /* 2 */
         this.execOrPush( 1 );                                               /* 1 */
         this.execOrPush( Math );                                            /* Math */
         this.execOrPush( min. );                                            /* min. */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( stack );                                           /* stack */
-        this.execOrPush( empty );                                           /* empty */
-        this.execOrPush( Leaves );                                          /* Leaves */
-        this.execOrPush( _num_2_rparen__rparen_ );                          /* 2)) */
-        this.execOrPush( _num_3_comma_ );                                   /* 3, */
-        this.execOrPush( _lparen_Math.max_lparen_1_comma_ );                /* (Math.max(1, */
-        this.execOrPush( _quot__quot_ );                                    /* "" */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( drop_star_ );                                      /* drop* */
+        this.pushArgsAndExec( _dot_ );                                      /* drop< */
         this.execOrPush( _dot_ );                                           /* . */
+        this.execOrPush( 3 );                                               /* 3 */
+        this.execOrPush( 2 );                                               /* 2 */
         this.execOrPush( 1 );                                               /* 1 */
-        x = this.pop();                                                     /* x= */
-        this.execOrPush( x );                                               /* x */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( prints );                                          /* prints */
+        this.execOrPush( 3 );                                               /* 3 */
+        this.execOrPush( 2 );                                               /* 2 */
+        this.execOrPush( 1 );                                               /* 1 */
+        this.pushArgsAndExec( 1 );                                          /* .< */
+        this.execOrPush( 3 );                                               /* 3 */
+        this.execOrPush( 2 );                                               /* 2 */
+        this.execOrPush( 1 );                                               /* 1 */
+        this.pushArgsAndExec( 1, 2 );                                       /* .<2 */
+        this.execOrPush( 3 );                                               /* 3 */
+        this.execOrPush( 2 );                                               /* 2 */
+        this.execOrPush( 1 );                                               /* 1 */
         this.execOrPush( Math.min );                                        /* Math.min */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( _quot_finity_quot_ );                              /* "finity" */
-        this.execOrPush( prints );                                          /* prints */
-        this.push( ":Math.min" );                                           /* :Math.min */
+        this.execOrPush( 3 );                                               /* 3 */
+        this.execOrPush( 2 );                                               /* 2 */
+        this.execOrPush( 1 );                                               /* 1 */
+        this.pushArgsAndExec( 1, 2 );                                       /* Math.max<2 */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( drop_star_ );                                      /* drop* */
+        this.pushArgsAndExec( _dot_ );                                      /* drop< */
         this.execOrPush( _dot_ );                                           /* . */
         this.execOrPush( 3 );                                               /* 3 */
         this.execOrPush( 2 );                                               /* 2 */
         this.execOrPush( 1 );                                               /* 1 */
-        this.execOrPush( .2 );                                              /* .2 */
-        this.execOrPush( empty );                                           /* empty */
-        this.execOrPush( stack );                                           /* stack */
-        this.execOrPush( the );                                             /* the */
-        this.execOrPush( leaves );                                          /* leaves */
-        this.execOrPush( and );                                             /* and */
-        this.execOrPush( items_comma_ );                                    /* items, */
-        this.execOrPush( two );                                             /* two */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( 3 );                                               /* 3 */
-        this.execOrPush( 2 );                                               /* 2 */
-        this.execOrPush( 1 );                                               /* 1 */
-        this.execOrPush( drop_star_ );                                      /* drop* */
-        this.execOrPush( stack );                                           /* stack */
-        this.execOrPush( entire );                                          /* entire */
-        this.execOrPush( empties );                                         /* empties */
-        this.execOrPush( drop_star_ );                                      /* drop* */
-        this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( 3 );                                               /* 3 */
-        this.execOrPush( 2 );                                               /* 2 */
-        this.execOrPush( 1 );                                               /* 1 */
-        this.execOrPush( stack );                                           /* stack */
-        this.execOrPush( on );                                              /* on */
-        this.execOrPush( item );                                            /* item */
-        this.execOrPush( one );                                             /* one */
-        this.execOrPush( leaves );                                          /* leaves */
-        this.execOrPush( and );                                             /* and */
-        this.execOrPush( _quot__quot_ );                                    /* "" */
-        this.execOrPush( prints );                                          /* prints */
         this.execOrPush( 3 );                                               /* 3 */
         this.execOrPush( 2 );                                               /* 2 */
         this.execOrPush( 1 );                                               /* 1 */
         this.execOrPush( 3 );                                               /* 3 */
         this.execOrPush( 2 );                                               /* 2 */
         this.execOrPush( 1 );                                               /* 1 */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( drop_star_ );                                      /* drop* */
+        this.pushArgsAndExec( 1 );                                          /* drop< */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( prints );                                          /* prints */
         this.execOrPush( ._star_ );                                         /* .* */
         this.execOrPush( ._star_ );                                         /* .* */
-        this.execOrPush( prints );                                          /* prints */
         this.execOrPush( _plus_ );                                          /* + */
         this.execOrPush( _dot_ );                                           /* . */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( prints );                                          /* prints */
-        this.execOrPush( drop_star_ );                                      /* drop* */
+        this.pushArgsAndExec( _dot_ );                                      /* drop< */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.execOrPush( 4 );                                               /* 4 */
+        this.execOrPush( 2 );                                               /* 2 */
+        this.execOrPush( _plus_ );                                          /* + */
+        this.execOrPush( 3 );                                               /* 3 */
+        this.execOrPush( 5 );                                               /* 5 */
+        this.execOrPush( _dash_ );                                          /* - */
+        this.execOrPush( _plus_ );                                          /* + */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.execOrPush( _plus_ );                                          /* + */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.pushArgsAndExec( _dot_ );                                      /* drop< */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.execOrPush( Math.min );                                        /* Math.min */
+        this.execOrPush( _dot_ );                                           /* . */
+        this.execOrPush( 4 );                                               /* 4 */
+        this.execOrPush( _tick_hi_tick_ );                                  /* 'hi' */
+        this.execOrPush( alert );                                           /* alert */
+        this.pushArgsAndExec( alert );                                      /* .< */
+        this.execOrPush( split. );                                          /* split. */
+        this.pushArgsAndExec( split. );                                     /* drop< */
         this.execOrPush( _dot_ );                                           /* . */
         this.execOrPush( 1 );                                               /* 1 */
         x = this.pop();                                                     /* x= */
-        this.execOrPush( x );                                               /* x */
-        this.execOrPush( to );                                              /* to */
-        this.execOrPush( 1 );                                               /* 1 */
-        this.execOrPush( assign );                                          /* assign */
-        this.execOrPush( scope );                                           /* scope */
-        this.execOrPush( local );                                           /* local */
-        this.execOrPush( in );                                              /* in */
-        this.execOrPush( y );                                               /* y */
-        this.execOrPush( var );                                             /* var */
-        this.execOrPush( with );                                            /* with */
-        this.execOrPush( executed );                                        /* executed */
-        this.execOrPush( function );                                        /* function */
-        this.execOrPush( anonymous );                                       /* anonymous */
         this.push( typeof y );                                              /* typeof:y */
           this.execOrPush( _dot_ );                                         /* . */
-          this.execOrPush( _quot_defined_quot_ );                           /* "defined" */
-          this.execOrPush( prints );                                        /* prints */
-          this.execOrPush( scope );                                         /* scope */
-          this.execOrPush( outer );                                         /* outer */
-          this.execOrPush( from );                                          /* from */
-          this.execOrPush( is );                                            /* is */
-          this.execOrPush( x );                                             /* x */
-          this.execOrPush( var );                                           /* var */
           this.execOrPush( x );                                             /* x */
           this.execOrPush( _dot_ );                                         /* . */
-          this.execOrPush( 1 );                                             /* 1 */
-          this.execOrPush( not );                                           /* not */
-          this.execOrPush( _num_3_comma_ );                                 /* 3, */
-          this.execOrPush( prints );                                        /* prints */
-          this.execOrPush( drop_star_ );                                    /* drop* */
+          this.pushArgsAndExec( _dot_ );                                    /* drop< */
           this.execOrPush( _dot_ );                                         /* . */
-          this.execOrPush( _tick__tick_ );                                  /* '' */
+          this.execOrPush( _tick_fs_tick_ );                                /* 'fs' */
           this.execOrPush( require );                                       /* require */
           fs = this.pop();                                                  /* fs= */
-          this.execOrPush( variable. );                                     /* variable. */
-          this.execOrPush( fs );                                            /* fs */
-          this.execOrPush( the );                                           /* the */
-          this.execOrPush( to );                                            /* to */
-          this.execOrPush( it );                                            /* it */
-          this.execOrPush( assing );                                        /* assing */
-          this.execOrPush( and );                                           /* and */
-          this.execOrPush( module );                                        /* module */
-          this.execOrPush( fs );                                            /* fs */
-          this.execOrPush( the );                                           /* the */
-          this.execOrPush( load );                                          /* load */
           this.pushCB(null);                                                /* cb */
-          this.execOrPush( _tick_tf8_tick_ );                               /* 'tf8' */
-          this.execOrPush( _tick_js.bat_tick_ );                            /* 'js.bat' */
+          this.execOrPush( _tick_utf8_tick_ );                              /* 'utf8' */
+          this.execOrPush( _tick_fjs.bat_tick_ );                           /* 'fjs.bat' */
           this.execOrPush( fs.readFile );                                   /* fs.readFile */
           this.wait();                                                      /* wait */
         }
       }, function() {
         with( fjs_dash_primitives ) {
           this.execOrPush( ._star_ );                                       /* .* */
-          this.execOrPush( contents );                                      /* contents */
-          this.execOrPush( file );                                          /* file */
-          this.execOrPush( and );                                           /* and */
-          this.execOrPush( code );                                          /* code */
-          this.execOrPush( error );                                         /* error */
-          this.execOrPush( the );                                           /* the */
-          this.execOrPush( then );                                          /* then */
-          this.execOrPush( and );                                           /* and */
-          this.execOrPush( prints );                                        /* prints */
-          this.execOrPush( drop_star_ );                                    /* drop* */
+          this.pushArgsAndExec( ._star_ );                                  /* drop< */
           this.execOrPush( _dot_ );                                         /* . */
-          this.execOrPush( _tick__dash_primitives_tick_ );                  /* '-primitives' */
+          this.execOrPush( _tick_._slash_fjs_dash_primitives_tick_ );       /* './fjs-primitives' */
           this.execOrPush( require );                                       /* require */
           fjs_dash_primitives = this.pop();                                 /* fjs-primitives= */
           with( fjs_dash_primitives ) {
-            this.execOrPush( drop_star_ );                                  /* drop* */
+            this.pushArgsAndExec( fjs_dash_primitives );                    /* drop< */
             this.execOrPush( _dot_ );                                       /* . */
-            this.execOrPush( require );                                     /* require */
-            fs = this.pop();                                                /* fs= */
-            this.execOrPush( write );                                       /* write */
-            this.execOrPush( for );                                         /* for */
-            this.execOrPush( namespace );                                   /* namespace */
-            this.execOrPush( the );                                         /* the */
-            this.execOrPush( as );                                          /* as */
-            this.execOrPush( fs );                                          /* fs */
-            this.execOrPush( use );                                         /* use */
-            this.execOrPush( drop_star_ );                                  /* drop* */
-            this.execOrPush( _dot_ );                                       /* . */
-            exports.increment = this.pop();                                 /* exports.increment= */
-            this.execOrPush( module );                                      /* module */
-            this.execOrPush( the );                                         /* the */
-            this.execOrPush( from );                                        /* from */
-            this.execOrPush( exported );                                    /* exported */
-            this.execOrPush( is );                                          /* is */
-            this.execOrPush( function );                                    /* function */
-            this.execOrPush( ncrement` );                                   /* `ncrement` */
-            this.execOrPush( The );                                         /* The */
-            this.execOrPush( drop_star_ );                                  /* drop* */
-            this.execOrPush( _dot_ );                                       /* . */
-            this.execOrPush( _dot_ );                                       /* . */
-            this.execOrPush( prints );                                      /* prints */
-            this.execOrPush( and );                                         /* and */
-            this.execOrPush( x );                                           /* x */
-            this.execOrPush( to );                                          /* to */
             this.execOrPush( 2 );                                           /* 2 */
-            this.execOrPush( assigns );                                     /* assigns */
-            this.execOrPush( drop_star_ );                                  /* drop* */
+            this.execOrPush( 1 );                                           /* 1 */
+            this.execOrPush( _lt_ );                                        /* < */
             this.execOrPush( _dot_ );                                       /* . */
-            this.execOrPush( function );                                    /* function */
-            this.execOrPush( of );                                          /* of */
-            this.execOrPush( end );                                         /* end */
-            this.execOrPush( to );                                          /* to */
-            this.execOrPush( goes );                                        /* goes */
+            this.execOrPush( 2 );                                           /* 2 */
+            this.execOrPush( 1 );                                           /* 1 */
+            this.execOrPush( _gt_ );                                        /* > */
+            this.execOrPush( _dot_ );                                       /* . */
+            this.execOrPush( 2 );                                           /* 2 */
+            this.execOrPush( 1 );                                           /* 1 */
+            this.execOrPush( _plus_ );                                      /* + */
+            this.execOrPush( 3 );                                           /* 3 */
+            this.execOrPush( _eq_ );                                        /* = */
+            this.execOrPush( _dot_ );                                       /* . */
+            this.pushArgsAndExec( _dot_ );                                  /* drop< */
+            this.execOrPush( _dot_ );                                       /* . */
+            this.execOrPush( true );                                        /* true */
+            this.execOrPush( not );                                         /* not */
+            this.execOrPush( _dot_ );                                       /* . */
+            this.execOrPush( false );                                       /* false */
+            this.execOrPush( true );                                        /* true */
+            this.execOrPush( and );                                         /* and */
+            this.execOrPush( _dot_ );                                       /* . */
+            this.execOrPush( 6 );                                           /* 6 */
+            x = this.pop();                                                 /* x= */
+            this.execOrPush( 5 );                                           /* 5 */
+            this.execOrPush( x );                                           /* x */
+            this.execOrPush( _gt_ );                                        /* > */
+            this.execOrPush( 3 );                                           /* 3 */
+            this.execOrPush( x );                                           /* x */
+            this.execOrPush( _lt_ );                                        /* < */
+            this.execOrPush( or );                                          /* or */
+            this.execOrPush( _dot_ );                                       /* . */
+            this.execOrPush( 6 );                                           /* 6 */
+            x = this.pop();                                                 /* x= */
+            this.execOrPush( or );                                          /* or */
+            this.execOrPush( _dot_ );                                       /* . */
+            this.pushArgsAndExec( _dot_ );                                  /* drop< */
+            this.execOrPush( _dot_ );                                       /* . */
+            this.execOrPush( {x:1}` );                                      /* `{x:1}` */
             obj = this.pop();                                               /* obj= */
             this.push( typeof x );                                          /* typeof:x */
               this.execOrPush( _dot_ );                                     /* . */
-              this.execOrPush( _quot_defined_quot_ );                       /* "defined" */
-              this.execOrPush( prints );                                    /* prints */
-              this.execOrPush( _dash__dash__dash__dash__dash__dash__dash__dash_ ); /* -------- */
-              this.execOrPush( Node );                                      /* Node */
-              this.execOrPush( from );                                      /* from */
-              this.execOrPush( example );                                   /* example */
-              this.execOrPush( server );                                    /* server */
-              this.execOrPush( http );                                      /* http */
-              this.execOrPush( Javascript );                                /* Javascript */
-              this.execOrPush( Standard );                                  /* Standard */
-              this.execOrPush( _dash__dash__dash__dash__dash__dash__dash__dash_ ); /* -------- */
-              this.execOrPush( require_lparen__tick_http_tick__rparen__semi_ ); /* require('http'); */
+              this.pushArgsAndExec( _dot_ );                                /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( 1 );                                         /* 1 */
+              x = this.pop();                                               /* x= */
+              this.push( "( console.log 'x is 1' )" );                      /* :( console.log 'x is 1' ) */
+              this.execOrPush( _if_ );                                      /* if */
+              this.push( "( . 'x is 1' )" );                                /* :( . 'x is 1' ) */
+              prt1 = this.pop();                                            /* prt1= */
+              this.execOrPush( 1 );                                         /* 1 */
+              x = this.pop();                                               /* x= */
+              this.execOrPush( prt1 );                                      /* prt1 */
+              this.execOrPush( 1 );                                         /* 1 */
+              this.execOrPush( x );                                         /* x */
               this.execOrPush( _eq_ );                                      /* = */
-              this.execOrPush( http );                                      /* http */
-              this.execOrPush( var );                                       /* var */
-              this.execOrPush( _lbrace_ );                                  /* { */
-              this.execOrPush( res_rparen_ );                               /* res) */
-              this.execOrPush( _lparen_req_comma_ );                        /* (req, */
-              this.execOrPush( http.createServer_lparen_function );         /* http.createServer(function */
-              this.execOrPush( _lbrace__tick_Content_dash_Type_tick__colon_ ); /* {'Content-Type': */
-              this.execOrPush( res.writeHead_lparen_200_comma_ );           /* res.writeHead(200, */
+              this.execOrPush( _if_ );                                      /* if */
+              this.execOrPush( 1 );                                         /* 1 */
+              x = this.pop();                                               /* x= */
+              this.execOrPush( 1 );                                         /* 1 */
+              y = this.pop();                                               /* y= */
+              this.push( "( y= 2 )" );                                      /* :( y= 2 ) */
+              this.execOrPush( 3 );                                         /* 3 */
+              this.execOrPush( x );                                         /* x */
+              this.execOrPush( _lt_ );                                      /* < */
+              this.execOrPush( _if_ );                                      /* if */
+              this.execOrPush( y );                                         /* y */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( 1 );                                         /* 1 */
+              x = this.pop();                                               /* x= */
+              this.execOrPush( 1 );                                         /* 1 */
+              y = this.pop();                                               /* y= */
+              this.execOrPush( 3 );                                         /* 3 */
+              this.execOrPush( x );                                         /* x */
+              this.execOrPush( _lt_ );                                      /* < */
+              this.push( "( y= 2 )" );                                      /* :( y= 2 ) */
+              this.execOrPush( doif );                                      /* doif */
+              this.execOrPush( y );                                         /* y */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.pushArgsAndExec( _dot_ );                                /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( 0 );                                         /* 0 */
+              x = this.pop();                                               /* x= */
+              this.push( "( x= + x 1 . x )" );                              /* :( x= + x 1 . x ) */
+              this.push( "( < x 3 )" );                                     /* :( < x 3 ) */
+              this.execOrPush( _while_ );                                   /* while */
+              this.pushArgsAndExec( _while_ );                              /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( 0 );                                         /* 0 */
+              x = this.pop();                                               /* x= */
+              this.push( "( < x 3 x= + x 1 . x )" );                        /* :( < x 3 x= + x 1 . x ) */
+              this.execOrPush( repeat );                                    /* repeat */
+              this.pushArgsAndExec( repeat );                               /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( _lbkt__rbkt_ );                              /* [] */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.pushArgsAndExec( _dot_ );                                /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( x. );                                        /* x. */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( _tick_x_tick_ );                             /* 'x' */
+              this.execOrPush( get );                                       /* get */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( 1 );                                         /* 1 */
+              this.execOrPush( get );                                       /* get */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.pushArgsAndExec( _dot_ );                                /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( _lbkt__rbkt_ );                              /* [] */
+              x = this.pop();                                               /* x= */
+              this.execOrPush( _tick_a_tick_ );                             /* 'a' */
+              this.execOrPush( 0 );                                         /* 0 */
+              this.execOrPush( x );                                         /* x */
+              this.execOrPush( set );                                       /* set */
+              this.execOrPush( x );                                         /* x */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( _lbrace__rbrace_ );                          /* {} */
+              x = this.pop();                                               /* x= */
+              this.execOrPush( 1 );                                         /* 1 */
+              this.execOrPush( _tick_a_tick_ );                             /* 'a' */
+              this.execOrPush( x );                                         /* x */
+              this.execOrPush( set );                                       /* set */
+              this.execOrPush( x );                                         /* x */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.pushArgsAndExec( _dot_ );                                /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( pop. );                                      /* pop. */
+              this.execOrPush( _dot_ );                                     /* . */
+              x = this.pop();                                               /* x= */
+              this.execOrPush( 4 );                                         /* 4 */
+              this.execOrPush( x );                                         /* x */
+              this.execOrPush( push. );                                     /* push. */
+              this.execOrPush( x );                                         /* x */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.pushArgsAndExec( _dot_ );                                /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( [1,2,5]` );                                  /* `[1,2,5]` */
+              this.push( "( * dup @ )" );                                   /* :( * dup @ ) */
+              this.execOrPush( map );                                       /* map */
+              this.execOrPush( [0,3]` );                                    /* `[0,3]` */
+              this.execOrPush( [1,2]` );                                    /* `[1,2]` */
+              this.push( "( * dup @ )" );                                   /* :( * dup @ ) */
+              this.pushArgsAndExec( [1,2]`, 3 );                            /* map<3 */
+              this.pushArgsAndExec( [1,2]` );                               /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.push( "( . +< '[' @ ']=' @ )" );                         /* :( . +< '[' @ ']=' @ ) */
+              this.execOrPush( each );                                      /* each */
+              this.pushArgsAndExec( each );                                 /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( _tick_fs_tick_ );                            /* 'fs' */
+              this.execOrPush( require );                                   /* require */
+              fs = this.pop();                                              /* fs= */
+              this.execOrPush( fs.writefileSync );                          /* fs.writefileSync */
+              this.pushArgsAndExec( fs.writefileSync );                     /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              exports.increment = this.pop();                               /* exports.increment= */
+              this.pushArgsAndExec( exports.increment );                    /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.execOrPush( _dot_ );                                     /* . */
+              obj = this.pop();                                             /* obj= */
+              this.pushArgsAndExec( obj );                                  /* drop< */
+              this.execOrPush( _dot_ );                                     /* . */
               this.pushCB(null);                                            /* cb */
-              this.execOrPush( _rparen_ );                                  /* ) */
+              this.execOrPush( createServer. );                             /* createServer. */
+              this.execOrPush( drop );                                      /* drop */
+              this.execOrPush( _dot_ );                                     /* . */
+              this.wait();                                                  /* wait */
+            }
+          }
+        }, function() {
+          with( fjs_dash_primitives ) {
+            with( fjs_dash_primitives ) {
+              this.execOrPush( swap );                                      /* swap */
+              this.execOrPush( drop );                                      /* drop */
+              this.execOrPush( dup );                                       /* dup */
               this.funcReturn();                                            /* ) */
             }
           }

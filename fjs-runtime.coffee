@@ -28,7 +28,8 @@ class Context
 
 	popAll: -> stk = @curFrame.stack; @curFrame.stack = []; stk
 
-	popN: (n or= @curFrame.stack.length) ->
+	popN: (n) ->
+		n or= @curFrame.stack.length
 		@curFrame.stack.splice 0, n
 
 	push: (v) -> @curFrame.stack.unshift v
