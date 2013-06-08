@@ -164,9 +164,9 @@ Note that in the last line the `<2` modifier on the function specifies the numbe
 
 We need a way for an FJS function to return results to the outer stack when the functions finishes execution.  This is done simply by taking all left-over items on the inner stack and pushing them on the outer stack when the function returns.
 
-    .*  (   1 2 3 )   // prints "1 2 3"
-    .*  ( + 1 2 3 )   // prints "3 3"
-    . + ( + 1 2 3 )   // prints "6"
+    .<   (   1 2 3 )   // prints "1 2 3"
+    .<   ( + 1 2 3 )   // prints "3 3"
+    .< + ( + 1 2 3 )   // prints "6"
 
 From the example above, you can see that an anonymous function looks and behaves like simple paren grouping as in this example javascript code: `( 1 + 2) * 3`.  While FJS and other stack-basec languages never require grouping, it can be used to help readability.
 
@@ -203,7 +203,7 @@ When there is a function that requires a callback argument, you simply use the `
 Later, when the aync javascript function calls the callback, the internal FJS cb-generated function restarts the FJS execution where the `wait` word paused, using the context it had before. The results passed to the cb-generated function are pushed on the stack.  This example calls the node fs.readFile function and then prints the text that was read.
 
 	fs= require 'fs'  // load the fs module and assing it to the fs variable.
-	.* wait ( . 'hello world' ) fs.readFile 'fjs.bat' 'utf8' cb
+	.< wait ( . 'hello world' ) fs.readFile 'fjs.bat' 'utf8' cb
                       // prints "hello world" and then the error code and file contents
 
 Note that the file path, encoding, and cb-generated function are passed as arguments to readfile.  Execution continues, hello world is printed, and then FJS pauses at the wait until the callback happens. Then the readile results are pushed to the stack and printed.

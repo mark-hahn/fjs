@@ -42,9 +42,9 @@
     ( .< @< 4 )<2      1 2 3  // prints "1 2 4" and leaves one item on stack
 
 . "\nFrom the *Function Results* section" drop<
-    .*  (   1 2 3 )   // prints "1 2 3"
-    .*  ( + 1 2 3 )   // prints "3 3"
-    . + ( + 1 2 3 )   // prints "6"
+    .<   (   1 2 3 )   // prints "1 2 3"
+    .<   ( + 1 2 3 )   // prints "3 3"
+    .< + ( + 1 2 3 )   // prints "6"
 
 . "\nFrom the *Function Results* section" drop<
 	. + - 5 3 + 2 4				// prints "8"
@@ -64,7 +64,7 @@
 
 . "\nFrom the *Async Execution* section" drop<
 	fs= require 'fs'  // load the fs module and assing it to the fs variable.
-	.* wait ( . 'hello world' ) fs.readFile 'fjs.bat' 'utf8' cb
+	.< wait ( . 'hello world' ) fs.readFile 'fjs.bat' 'utf8' cb
                       // prints "hello world" and then the error code and file contents
 
 . "\nFrom the *Primitve Words* section" drop<

@@ -12,7 +12,7 @@
 
   debugCompile = true;
 
-  debugRuntime = false;
+  debugRuntime = true;
 
   fs = require('fs');
 
@@ -35,7 +35,7 @@
   funcOut = ("\n// File " + path + " compiled by FJS version " + version + " ") + ("on " + (new Date().toString().slice(0, 21)) + "\n\n");
 
   compileFunc = function(funcSrc, funcWordIdx, pfx) {
-    var dot, exists, front, getFuncString, getString, localVar, localVarIndexes, localVarsArr, ltn, m, matches, out, outFunc, parseWords, sym, topIdx, varSet, w, word, wordIdx, wordRegEx, wordsInLine, _, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _o, _ref, _ref1, _ref2;
+    var exists, front, getFuncString, getString, localVar, localVarIndexes, localVarsArr, ltn, m, matches, out, outFunc, parseWords, sym, topIdx, varSet, w, word, wordIdx, wordRegEx, wordsInLine, _, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _o, _ref, _ref1, _ref2, _ref3;
 
     getString = function(word, regex) {
       var chr0, chr1, delim, out, _ref;
@@ -107,10 +107,11 @@
       throw new Exception('Unmatched left paren');
     };
     parseWords = function(wordRegEx) {
-      var comment, eolRegex, matches, whiteSpace, wordMatch, wordsInLine, _, _ref;
+      var comment, eolRegex, lastIndex, matches, whiteSpace, wordMatch, wordsInLine, _, _ref;
 
       wordsInLine = [];
       matches = true;
+      lastIndex = wordRegEx.lastIndex;
       while (wordsInLine.length === 0 && matches) {
         while ((matches = wordRegEx.exec(funcSrc))) {
           _ = matches[0], wordMatch = matches[1], whiteSpace = matches[2];
@@ -131,10 +132,12 @@
             }
             wordsInLine.unshift(wordMatch);
           }
+          lastIndex = wordRegEx.lastIndex;
           if (comment || !whiteSpace || /\n/.test(whiteSpace)) {
             break;
           }
         }
+        wordRegEx.lastIndex = lastIndex;
       }
       return wordsInLine;
     };
@@ -162,28 +165,32 @@
         return funcOut += str + '\n';
       }
     };
-    outFunc = function(word, funcWordIdx, exec) {
+    outFunc = function(src, funcWordIdx, exec) {
+      var m;
+
       if (exec == null) {
         exec = true;
       }
       if (exec) {
-        out(null, '( function(){');
+        out(null, 'this.pushReturnValue( (function(){');
       } else {
-        out(null, 'this.pushReturnValue( function(){');
+        out(null, 'this.push( function(){');
       }
       depth++;
-      compileFunc(word, funcWordIdx, 'this');
+      if ((m = /^:?\((.*)\)<?(\d+)?$/.exec(src))) {
+        src = m[1];
+      }
+      compileFunc(src, funcWordIdx, 'this');
       depth--;
-      out(null, '}');
       if (exec) {
-        out('()', '} ).apply( this, this.curFrame.stack );');
+        out('()', '} ).apply( this, this.curFrame.stack ));');
         return out(null, 'this.curFrame.stack = [];');
       } else {
         return out(null, '} );');
       }
     };
     if (debugRuntime && !haveDbgInspect) {
-      out(null, "function fjsInspect(fjs_word) {\n" + "  while(fjs_word.length < 25) fjs_word += ' ';\n" + "  fjs_stkDmp = []; fjs_frame = this.curFrame;\n" + "  if(fjs_frame) {\n" + "    fjs_stk = fjs_frame.stack; fjs_stkLen = fjs_stk.length;\n" + "    for(fjs_i=0; fjs_i<fjs_stkLen; fjs_i++) {\n" + "      fjs_item = fjs_stk[fjs_i];\n" + "      fjs_stkDmp.push(\n" + "        fjs_item === null ? 'null' : \n" + "        typeof fjs_item == 'string'  ? '\"'+fjs_item+'\"'          : \n" + "        typeof fjs_item == 'number'  ?  fjs_item                   : \n" + "        fjs_item instanceof Function ? 'function'                  : \n" + "        fjs_item instanceof Array    ? '['+fjs_item.toString()+']' : \n" + "        fjs_item instanceof Boolean  ? fjs_item.toString()         : \n" + "        (fjs_m = /^function\\s(.*?)\\(/.exec(fjs_item.constructor)) ? fjs_m[1] :\n" + "        fjs_item.toString()\n" + "      );\n" + "    }\n" + "  }\n" + "  console.log( 'dbg: ' + fjs_word, fjs_stkDmp.join(', '));\n" + "}\n");
+      out(null, "function fjsInspect(fjs_word) {\n" + "  while(fjs_word.length < 25) fjs_word += ' ';\n" + "  fjs_stkDmp = []; fjs_frame = this.curFrame;\n" + "  if(fjs_frame) {\n" + "    fjs_stk = fjs_frame.stack; fjs_stkLen = fjs_stk.length;\n" + "    for(fjs_i=0; fjs_i<fjs_stkLen; fjs_i++) {\n" + "      fjs_item = fjs_stk[fjs_i];\n" + "      fjs_stkDmp.push(\n" + "        fjs_item === null ? 'null' : \n" + "        typeof fjs_item == 'string'  ? '\"'+fjs_item+'\"'          : \n" + "        typeof fjs_item == 'number'  ?  fjs_item                   : \n" + "        fjs_item instanceof Function ? 'function'                  : \n" + "        fjs_item instanceof Array    ? '['+fjs_item.toString()+']' : \n" + "        fjs_item instanceof Boolean  ? fjs_item.toString()         : \n" + "        (fjs_m = /^function\\s(.*?)\\(\\s/.exec(fjs_item.constructor)) ? fjs_m[1] :\n" + "        fjs_item.toString()\n" + "      );\n" + "    }\n" + "  }\n" + "  console.log( 'dbg: ' + fjs_word, fjs_stkDmp.join(', '));\n" + "}\n");
       haveDbgInspect = true;
     }
     localVarIndexes = {};
@@ -233,7 +240,13 @@
         if (debugCompile) {
           console.log('- word:', wordIdx, word.slice(0, 61));
         }
-        if (word.slice(0, 5) === 'with:') {
+        if ((_ref = word[0]) === '"' || _ref === "'") {
+          out(word, 'this.push( ' + word + ' );');
+        } else if (word[0] === "`") {
+          out(word, 'this.push( ' + word.slice(1, -1) + ' );');
+        } else if ((m = /^(:)?\(\s/.exec(word))) {
+          outFunc(word, wordIdx, !m[1]);
+        } else if (word.slice(0, 5) === 'with:') {
           topIdx = withStmntStack.length - 1;
           sym = encodeSymbol(word.slice(5));
           withStmntStack[topIdx].push(sym);
@@ -251,18 +264,18 @@
           out(word, 'this.pushCB(' + (debugRuntime ? 'fjsInspect' : 'null') + ');');
         } else if (word === 'wait') {
           out(word, 'this.wait();');
-          _ref = withStmntStack[withStmntStack.length - 1];
-          for (_m = 0, _len3 = _ref.length; _m < _len3; _m++) {
-            i = _ref[_m];
+          _ref1 = withStmntStack[withStmntStack.length - 1];
+          for (_m = 0, _len3 = _ref1.length; _m < _len3; _m++) {
+            i = _ref1[_m];
             depth--;
             out(null, '}');
           }
           depth--;
           out(null, '}, function() {');
           depth++;
-          _ref1 = withStmntStack[withStmntStack.length - 1];
-          for (_n = 0, _len4 = _ref1.length; _n < _len4; _n++) {
-            w = _ref1[_n];
+          _ref2 = withStmntStack[withStmntStack.length - 1];
+          for (_n = 0, _len4 = _ref2.length; _n < _len4; _n++) {
+            w = _ref2[_n];
             out(null, 'with( ' + encodeSymbol(w) + ' ) {');
             depth++;
           }
@@ -278,32 +291,27 @@
         } else if ((m = /^(\S+)<(\d*)$/.exec(word))) {
           _ = m[0], front = m[1], ltn = m[2];
           out(word, 'this.pushArgsAndExec( ' + sym + (ltn ? ', ' + ltn : '') + ' );');
-        } else if ((m = /^(\S+)(\.)?$/.exec(word))) {
-          _ = m[0], front = m[1], dot = m[2];
-          if (!front) {
-            if (dot) {
-              out('.', 'this.execOrPush( _dot_ );');
-            }
+        } else if ((m = /^(\S+)\.$/.exec(word))) {
+          if (!(front = m[1])) {
+            out('.', 'this.execOrPush( _dot_ );');
           } else {
             sym = encodeSymbol(front);
-            if (!dot) {
-              out(word, 'this.execOrPush( ' + sym + ' );');
-            } else {
-              out(null, 'fjs_ctxtObj = this.pop();');
-              out(null, 'fjs_val = fjs_ctxtObj.' + sym + ';');
-              out(null, 'if(typeof fjs_val == "function")');
-              out(null, '  fjs_val = fjs_val.apply(');
-              out(null, '      fjs_ctxtObj, this.curFrame.stack );');
-              out(word, 'if(fjs_val != undefined) this.pushReturnValue(fjs_val);');
-            }
+            out(null, 'fjs_ctxtObj = this.pop();');
+            out(null, 'fjs_val = fjs_ctxtObj.' + sym + ';');
+            out(null, 'if(typeof fjs_val == "function")');
+            out(null, '  fjs_val = fjs_val.apply(');
+            out(null, '      fjs_ctxtObj, this.curFrame.stack );');
+            out(word, 'if(fjs_val != undefined) this.pushReturnValue(fjs_val);');
           }
+        } else {
+          out(word, 'this.execOrPush( ' + encodeSymbol(word) + ' );');
         }
       }
     }
     out(')', 'this.funcReturn();');
-    _ref2 = withStmntStack[withStmntStack.length - 1];
-    for (_o = 0, _len5 = _ref2.length; _o < _len5; _o++) {
-      i = _ref2[_o];
+    _ref3 = withStmntStack[withStmntStack.length - 1];
+    for (_o = 0, _len5 = _ref3.length; _o < _len5; _o++) {
+      i = _ref3[_o];
       depth--;
       out(null, '}');
     }

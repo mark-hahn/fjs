@@ -7,7 +7,7 @@
 version = '0.1.0'
 
 debugCompile = yes
-debugRuntime = no
+debugRuntime = yes
 
 fs = require 'fs'
 
@@ -109,9 +109,10 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 	#################### parse words routine #####################
 
 	parseWords = (wordRegEx) ->
-
 		wordsInLine = []
 		matches     = true
+
+		lastIndex = wordRegEx.lastIndex
 
 		while wordsInLine.length is 0 and matches
 
@@ -123,6 +124,7 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 					eolRegex.lastIndex = wordRegEx.lastIndex
 					eolRegex.exec funcSrc
 					wordRegEx.lastIndex = eolRegex.lastIndex
+
 				else
 					# string constant
 					if wordMatch[0] in ['"', "'", "`"]
@@ -131,6 +133,7 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 						wordMatch = getString wordMatch, wordRegEx
 						whiteSpace = funcSrc[wordRegEx.lastIndex]
 
+					# function string
 					else if /^:?\($/.test wordMatch
 						wordRegEx.lastIndex = wordRegEx.lastIndex - whiteSpace.length
 						wordMatch  = getFuncString wordMatch, wordRegEx
@@ -138,7 +141,11 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 
 					wordsInLine.unshift wordMatch
 
-				if comment or not whiteSpace or /\n/.test whiteSpace then break
+				lastIndex = wordRegEx.lastIndex
+				if comment or not whiteSpace or /\n/.test whiteSpace
+					break
+
+			wordRegEx.lastIndex = lastIndex
 
 		wordsInLine
 
@@ -156,21 +163,23 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 		else
 			funcOut += str + '\n'
 
-	outFunc = (word, funcWordIdx, exec = yes) ->
+	outFunc = (src, funcWordIdx, exec = yes) ->
 		if exec
-			out null, '( function(){'
+			out null, 'this.pushReturnValue( (function(){'
 		else
-			out null, 'this.pushReturnValue( function(){'
+			out null, 'this.push( function(){'
 
 		depth++
 
-		compileFunc word, funcWordIdx, 'this'
+		if (m = /^:?\((.*)\)<?(\d+)?$/.exec src) then src = m[1]
+
+		compileFunc src, funcWordIdx, 'this'
 
 		depth--
-		out null, '}'
+#		out null, '}'
 
 		if exec
-			out '()', '} ).apply( this, this.curFrame.stack );'
+			out '()', '} ).apply( this, this.curFrame.stack ));'
 			out null, 'this.curFrame.stack = [];'
 		else
 			out null, '} );'
@@ -192,7 +201,7 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 				  "        fjs_item instanceof Function ? 'function'                  : \n" +
 		          "        fjs_item instanceof Array    ? '['+fjs_item.toString()+']' : \n" +
 		          "        fjs_item instanceof Boolean  ? fjs_item.toString()         : \n" +
-				  "        (fjs_m = /^function\\s(.*?)\\(/.exec(fjs_item.constructor)) ? fjs_m[1] :\n" +
+				  "        (fjs_m = /^function\\s(.*?)\\(\\s/.exec(fjs_item.constructor)) ? fjs_m[1] :\n" +
 				  "        fjs_item.toString()\n" +
 				  "      );\n" +
 				  "    }\n" +
@@ -210,7 +219,6 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 	wordIdx   = -1
 
 	while (wordsInLine = parseWords wordRegEx).length
-
 		for word in wordsInLine
 			wordIdx++
 			if word not in ['=', '>=', '<=', 'not='] and
@@ -258,7 +266,16 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 
 			if debugCompile then console.log '- word:', wordIdx, word[0..60]
 
-			if word[0..4] is 'with:'
+			if word[0] in ['"', "'"]
+				out word, 'this.push( ' + word + ' );'
+
+			else if word[0] is "`"
+				out word, 'this.push( ' + word[1..-2] + ' );'
+
+			else if (m = /^(:)?\(\s/.exec word)
+				outFunc word, wordIdx, not m[1]
+
+			else if word[0..4] is 'with:'
 				topIdx = withStmntStack.length-1
 				sym = encodeSymbol word[5..]
 				withStmntStack[topIdx].push sym
@@ -313,23 +330,20 @@ compileFunc = (funcSrc, funcWordIdx, pfx) ->
 							(if ltn then ', ' + ltn else '') + ' );'
 
 			# dot modifier to var or function, xxx.
-			else if (m = /^(\S+)(\.)?$/.exec word)
-				[_, front, dot] = m
-
-				if not front
-					if dot
-						out '.', 'this.execOrPush( _dot_ );'
+			else if (m = /^(\S+)\.$/.exec word)
+				if not (front = m[1])
+					out '.', 'this.execOrPush( _dot_ );'
 				else
 					sym = encodeSymbol front
-					if not dot
-						out word, 'this.execOrPush( ' + sym + ' );'
-					else
-						out null, 'fjs_ctxtObj = this.pop();'
-						out null, 'fjs_val = fjs_ctxtObj.' + sym + ';'
-						out null, 'if(typeof fjs_val == "function")'
-						out null, '  fjs_val = fjs_val.apply('
-						out null, '      fjs_ctxtObj, this.curFrame.stack );'
-						out word, 'if(fjs_val != undefined) this.pushReturnValue(fjs_val);'
+					out null, 'fjs_ctxtObj = this.pop();'
+					out null, 'fjs_val = fjs_ctxtObj.' + sym + ';'
+					out null, 'if(typeof fjs_val == "function")'
+					out null, '  fjs_val = fjs_val.apply('
+					out null, '      fjs_ctxtObj, this.curFrame.stack );'
+					out word, 'if(fjs_val != undefined) this.pushReturnValue(fjs_val);'
+
+			else
+				out word, 'this.execOrPush( ' + encodeSymbol(word) + ' );'
 
 	out ')', 'this.funcReturn();'
 	for i in withStmntStack[withStmntStack.length-1] then depth--; out null, '}'
