@@ -26,20 +26,20 @@
 	. :( + 1 2 )	// prints "[Function]"
 
 . "\nFrom the *Word Modifers* section" drop<
-    . Math.min  1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
-    . min. Math 1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
+    . Math.max  1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
+    . max. Math 1 2 3   // prints "3" (Math.max(1, 3, 2))   Leaves empty stack
 
 . "\nFrom the *Word Modifers* section" drop<
-    .    1 2 3				// pops one item and prints "1"
-    .<   1 2 3				// empties stack and prints "1 2 3"
+    .    1 2 3				// pops one item and prints "1", leaves two on stack
+    .<   1 2 3	drop<		// empties stack and prints "1 2 3"
     .<2  1 2 3				// pops two items and prints "1 2"
-    . Math.min 	 1 2 3		// empties stack and prints "3"
+    . Math.max 	 1 2 3		// empties stack and prints "3"
     . Math.max<2 1 2 3		// pops two items and prints "2"
 
 . "\nFrom the *Using Arguments* section" drop<
     ( .  @ . @ . @ )   1 2 3  // prints "1", then "2", then "3" and leaves stack empty
-    ( . Math.max @<2 ) 1 2 3  // prints "2" and leaves one item on stack
-    ( .< @< 4 )<2      1 2 3  // prints "1 2 4" and leaves one item on stack
+    ( . Math.max @2 )  1 2 3  // prints "2" and leaves one item on stack
+    ( .< @@ 4 )<2      1 2 3  // prints "1 2 4" and leaves one item on stack
 
 . "\nFrom the *Function Results* section" drop<
     .<   (   1 2 3 )   // prints "1 2 3"
@@ -51,9 +51,8 @@
 	. + ( - 5 3 ) ( + 2 4 )		// same but much more readable.
 
 . "\nFrom the *Function Results* section" drop<
-    . Math.min				// prints Infinity
-    .< alert 'hi' 4			// alerts "hi" and then prints only "4"
-    split. "1 2 3" ' '		// leaves three items on stack: "1", "2", "3"
+    . Math.min				    // prints Infinity
+    .< ( split. "1 2 3" ' ' )   // prints "1 2 3"
 
 . "\nFrom the *Named Variable Scopes* section" drop<
 	  x= 1		// assign 1 to x
@@ -67,29 +66,25 @@
 	.< wait ( . 'hello world' ) fs.readFile 'fjs.bat' 'utf8' cb
                       // prints "hello world" and then the error code and file contents
 
-. "\nFrom the *Primitve Words* section" drop<
-    fjs-primitives= require './fjs-primitives'
-    with:fjs-primitives
-
-. "\nFrom the *Comparisoms and Boolean Operators* section" drop<
+. "\nFrom the *Comparisons and Boolean Operators* section" drop<
     . < 1 2				// prints "true"
     . > 1 2				// prints "false"
     . = 3 + 1 2			// prints "true"
 
-. "\nFrom the *Comparisoms and Boolean Operators* section" drop<
+. "\nFrom the *Comparisons and Boolean Operators* section" drop<
 	. not true						// prints "false"
     . and true false				// prints "false'
     . or < x 3 > x 5 x= 6 			// prints "true'
 	. or ( < x 3 ) ( > x 5 ) x= 6	// same as last line but easier to read
 
 . "\nFrom the *Special Operator Prefixes* section" drop<
-	obj= `{x:1}` 		    	// assign object to var obj
-    ( . x with:obj )			// prints 1 (`with` goes to end of function
-    . typeof:x  			    // prints "undefined"
+	obj= `{z:1}` 		    	// assign object to var obj
+    ( . z with:obj )			// prints 1 (`with` goes to end of function
+    . typeof:z  			    // prints "undefined"
 
 . "\nFrom the *Conditionals and Looping* section" drop<
 	if ( = x 1 ) :( console.log 'x is 1' ) x= 1		// prints "x is 1"
-	if = x 1 prt1 x= 1 prt1= :( . 'x is 1' ) 		// prints "x is 1"
+	if = x 1 :prt1 x= 1 prt1= :( . 'x is 1' ) 		// prints "x is 1"
     . y if < x 3 :( y= 2 ) y= 1 x= 1				// prints "2"
     . y doif :( y= 2 ) < x 3 y= 1 x= 1				// prints "2"
 
@@ -100,9 +95,9 @@
     repeat :( < x 3 x= + x 1 . x ) x= 0	  // prints "0", "1" and "2"
 
 . "\nFrom the *Arrays and Objects* section" drop<
-	. []						// prints "[]"
-	. `[1, 2]`				    // prints "{ a: 1, b: 2 }"
-	. `{a:1, b:2}`				// prints "[ 1, 2 ]"
+	. []			 // prints "[]"
+	. []< 1 2		 // prints "[ 1, 2 ]"
+	. {}< :a 1 :b 2	 // prints "{ a: 1, b: 2 }"
 
 . "\nFrom the *Arrays and Objects* section" drop<
     . x.  `{ x: 'one', y: 'two' }`		// prints "one", js: console.log({x:'one', y:'two'}.x)
@@ -118,22 +113,14 @@
     . x push. x 4 x= `[1, 2, 3]`	// prints "[ 1, 2, 3, 4 ]"
 
 . "\nFrom the *Arrays and Objects* section" drop<
-    map   :( * dup @ ) `[1,2,5]` 		// leaves the array  [1, 4, 25] on the stack
-	map<3 :( * dup @ ) `[1,2]` `[0,3]`	// leaves the arrays [1, 4] and [0, 9] on the stack
+    . map :( * dup @ ) `[1,2,5]`    // prints [1, 4, 25]
 
 . "\nFrom the *Arrays and Objects* section" drop<
-    each :( . +< '[' @ ']=' @ ) `[1, 2]`	// prints "[0]=1 [1]=2"
-
-. "\nFrom the *Modules* section" drop<
-    fs= require 'fs'             	// load module and save it in fs var
-    fs.writefileSync 'hello world' 	// use fs as the namespace for write
-
-. "\nFrom the *Modules* section" drop<
-     exports.increment= ( + 1 @ )	// The `increment` function is exported from the module
+    each :( . @ ) `[1, 2]`	   // prints "1" then "2"
 
 . "\nFrom the *Embedding Javascript Code* section" drop<
     . `x = 1 + 1` 		// assigns 2 to x and prints "2"
-    obj= `{a:1, b:2}` 	// assigns a constant object to the variable `obj`
+    obj= `{a:1, b:2}` 	// assigns a constant object to the variable "obj"
 
 . "\nFrom the *Http Server* section" drop<
 
@@ -147,9 +134,9 @@
 
     createServer. ( require 'http' ) cb
     drop ( listen. @ 1337 '127.0.0.1' )
-    dup drop swap wait . 'Server running at http://127.0.0.1:1337/'
+    dup drop wait . 'Server running at http://127.0.0.1:1337/'
         ( writeHead. @ 200 `{'Content-Type':'text/plain'}` )
-        ( end.       @ 200 'Hello World'                   )
+        ( end.       @ 'Hello World\n'                     )
 
 
 

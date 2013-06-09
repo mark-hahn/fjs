@@ -8,6 +8,32 @@
   var __slice = [].slice;
 
   module.exports = {
+    _lbkt__rbkt_: function() {
+      var args;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
+        return [args];
+      } else {
+        return [[]];
+      }
+    },
+    _lbrace__rbrace_: function() {
+      var args, i, obj;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (this.overrideDefault) {
+        obj = {};
+        i = 0;
+        while (i < args.length - 1) {
+          obj[args[i].toString()] = args[i + 1];
+          i += 2;
+        }
+        return obj;
+      } else {
+        return {};
+      }
+    },
     _dot_: function() {
       var args;
 
@@ -86,7 +112,24 @@
       if (this.overrideDefault) {
         return args.slice(1).concat(args.slice(0, 1));
       } else {
-        return args.slice(1, 2).concat(args.slice(0, 1), args.slice(2));
+        return [args[1], args[0]];
+      }
+    },
+    get: function() {
+      var args, obj, res, _i, _len, _ref;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      obj = args[0];
+      if (this.overrideDefault) {
+        res = [];
+        _ref = args.slice(1);
+        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+          args = _ref[_i];
+          res.push(obj[arg]);
+        }
+        return res;
+      } else {
+        return obj[args[1]];
       }
     },
     _plus_: function() {
@@ -284,8 +327,9 @@
       var args;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (typeof args[0] === 'function' && args[0]() || args[0]) {
-        this.args[1].apply(this, args.slice(2));
+      console.log('_if_', args);
+      if (typeof args[0] === 'function' && args[0].call(this || args[0])) {
+        args[1].apply(this, args.slice(2));
       }
       return void 0;
     },
@@ -293,22 +337,69 @@
       var args;
 
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      if (typeof args[1] === 'function' && args[1]() || args[1]) {
-        this.args[0].apply(this, args.slice(2));
+      if (typeof args[1] === 'function' && args[1].call(this || args[1])) {
+        args[0].apply(this, args.slice(2));
       }
       return void 0;
     },
     _while_: function() {
-      while (args[0]()) {
-        this.args[1].apply(this, args.slice(2));
+      var args;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      while (args[0].call(this)) {
+        args[1].apply(this, args.slice(2));
+      }
+      return void 0;
+    },
+    repeat: function() {
+      var args;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      while (true) {
+        args[0].apply(this, args.slice(1));
+        if (this.pop() === false) {
+          break;
+        }
       }
       return void 0;
     },
     dowhile: function() {
-      while (args[1]()) {
-        this.args[0].apply(this, args.slice(2));
+      var args;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      while (args[1].call(this)) {
+        args[0].apply(this, args.slice(2));
       }
       return void 0;
+    },
+    map: function() {
+      var args, item, res, _i, _len, _ref;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      res = [];
+      _ref = args[1];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        args[0].call(this, item);
+        res.push(this.pop());
+      }
+      return [res];
+    },
+    each: function() {
+      var args, item, res, resItem, _i, _len, _ref;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      res = [];
+      _ref = args[1];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        item = _ref[_i];
+        args[0].call(this, item);
+        if ((resItem = this.pop()) === false) {
+          break;
+        }
+        res.push(resItem);
+      }
+      return [res];
     },
     rot: function() {
       var args;
@@ -318,6 +409,22 @@
         return args.slice(-1).concat(args.slice(0, -1));
       } else {
         return args.slice(2, 3).concat(args.slice(0, 2), args.slice(3));
+      }
+    },
+    set: function() {
+      var args, i, obj;
+
+      args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      obj = args[0];
+      if (this.overrideDefault) {
+        i = 0;
+        while (i < args.length - 1) {
+          obj[args[i]] = args[i + 1];
+          i += 2;
+        }
+        return res;
+      } else {
+        return obj[args[1]] = args[2];
       }
     },
     _new_: function() {

@@ -10,14 +10,15 @@
     __slice = [].slice;
 
   Frame = (function() {
-    function Frame(codeFuncSegs, segIdx, stack) {
+    function Frame(codeFuncSegs, segIdx, stack, args) {
       this.codeFuncSegs = codeFuncSegs;
       this.segIdx = segIdx != null ? segIdx : 0;
       this.stack = stack != null ? stack : [];
+      this.args = args != null ? args : [];
     }
 
     Frame.prototype.clone = function() {
-      return new Frame(this.codeFuncSegs, this.segIdx, this.stack.slice(0));
+      return new Frame(this.codeFuncSegs, this.segIdx, this.stack.slice(0, this.args.slice(0)));
     };
 
     return Frame;
@@ -34,12 +35,29 @@
     Context.prototype.clone = function() {
       var newCtxt;
 
-      newCtxt = new Context(this.curFrame.clone());
-      return newCtxt;
+      return newCtxt = new Context(this.curFrame.clone());
     };
 
     Context.prototype.stack = function() {
       return this.curFrame.stack;
+    };
+
+    Context.prototype.moveArgsToStack = function(n) {
+      var frame2;
+
+      if (!(frame2 = this.frames.slice(-1)[0])) {
+        return;
+      }
+      if (!n) {
+        this.curFrame.stack = frame2.args.concat(this.curFrame.stack);
+        return frame2.args = [];
+      } else {
+        return this.curFrame.stack = frame2.args.splice(0, n).concat(this.curFrame.stack);
+      }
+    };
+
+    Context.prototype.setArgs = function(args) {
+      return this.curFrame.args = Array.prototype.slice.call(args);
     };
 
     Context.prototype.pop = function() {
@@ -61,15 +79,6 @@
 
     Context.prototype.push = function(v) {
       return this.curFrame.stack.unshift(v);
-    };
-
-    Context.prototype.pushOuter = function(n) {
-      var items, outerStk;
-
-      outerStk = this.frames[this.frames.length - 1].stack;
-      n || (n = outerStk.length);
-      items = outerStk.splice(0, n);
-      return this.curFrame.stack = items.concat(this.curFrame.stack);
     };
 
     Context.prototype["new"] = function(Class, args) {
@@ -170,7 +179,7 @@
 
       stack = this.curFrame.stack;
       if ((this.curFrame = this.frames.pop())) {
-        return this.curFrame.stack = stack.concat(this.curFrame.stack);
+        return this.curFrame.stack = stack.concat(this.curFrame.args, this.curFrame.stack);
       }
     };
 

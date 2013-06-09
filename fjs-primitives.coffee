@@ -4,6 +4,26 @@
 
 module.exports =
 
+# ------------ PRIMITIVES WITH DEFAULT OF 0 ARGUMENTS --------------
+
+	_lbkt__rbkt_: (args...) ->
+		if @overrideDefault
+			[args]
+		else
+			[[]]
+
+	_lbrace__rbrace_: (args...) ->
+		if @overrideDefault
+			obj = {}
+			i = 0
+			while i < args.length - 1
+				obj[args[i].toString()] = args[i+1]
+				i += 2
+			obj
+		else
+			{}
+
+
 # ------------ PRIMITIVES WITH DEFAULT OF 1 ARGUMENT --------------
 
 	_dot_: (args...) ->
@@ -53,7 +73,17 @@ module.exports =
 		if @overrideDefault
 			args[1..-1].concat args[0..0]
 		else
-			args[1..1].concat args[0..0], args[2..]
+			[args[1], args[0]]
+
+	get: (args...) ->
+		obj = args[0]
+		if @overrideDefault
+			res = []
+			for args in args[1..]
+				res.push obj[ arg ]
+			res
+		else
+			obj[ args[1] ]
 
 	_plus_: (args...) ->
 		if @overrideDefault
@@ -63,6 +93,7 @@ module.exports =
 			for arg in args then total += arg
 			total
 		else
+#			console.log '_plus_ def', args, [ args[0] + args[1] ]
 			if args.length < 2 then args
 			else [ args[0] + args[1] ].concat args[2..]
 
@@ -138,23 +169,44 @@ module.exports =
 			else [ args[0] > args[1] ].concat args[2..]
 
 	_if_: (args...) ->
-		if typeof args[0] is 'function' and args[0]() or args[0]
-			@args[1].apply @, args[2..]
+		console.log '_if_', args
+		if typeof args[0] is 'function' and args[0].call @ or args[0]
+			args[1].apply @, args[2..]
 		undefined
 
 	doif: (args...) ->
-		if typeof args[1] is 'function' and args[1]() or args[1]
-			@args[0].apply @, args[2..]
+		if typeof args[1] is 'function' and args[1].call @ or args[1]
+			args[0].apply @, args[2..]
 		undefined
 
-	_while_:  ->
-		while args[0]() then @args[1].apply @, args[2..]
+	_while_: (args...) ->
+		while args[0].call @ then args[1].apply @, args[2..]
 		undefined
 
-	dowhile:  ->
-		while args[1]() then @args[0].apply @, args[2..]
+	repeat: (args...) ->
+		loop
+			args[0].apply @, args[1..]
+			if @pop() is false then break
 		undefined
 
+	dowhile: (args...) ->
+		while args[1].call @ then args[0].apply @, args[2..]
+		undefined
+
+	map: (args...) ->
+		res = []
+		for item in args[1]
+			args[0].call @, item
+			res.push @pop()
+		[res]
+
+	each: (args...) ->
+		res = []
+		for item in args[1]
+			args[0].call @, item
+			if (resItem = @pop()) is false then break
+			res.push resItem
+		[res]
 
 # ------------ PRIMITIVES WITH DEFAULT OF 3 ARGUMENTS --------------
 	rot: (args...) ->
@@ -162,6 +214,17 @@ module.exports =
 			args[-1..-1].concat args[0..-2]
 		else
 			args[2..2].concat args[0..1], args[3..]
+
+	set: (args...) ->
+		obj = args[0]
+		if @overrideDefault
+			i = 0
+			while i < args.length - 1
+				obj[args[i]] = args[i+1]
+				i += 2
+			res
+		else
+			obj[ args[1] ] = args[2]
 
 
 # ------------ PRIMITIVES WITH DEFAULT OF ALL ARGUMENTS --------------

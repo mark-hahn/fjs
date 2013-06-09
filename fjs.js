@@ -6,13 +6,13 @@
 
 
 (function() {
-  var charByName, compileFunc, debugCompile, debugRuntime, decodeSymbol, depth, encodeSymbol, fs, funcOut, haveDbgInspect, i, localVarStack, longPad, nameByChar, path, src, symByWord, version, withStmntStack, wordBySym, _i;
+  var callDepth, charByName, compileFunc, debugCompile, debugRuntime, decodeSymbol, depth, encodeSymbol, fs, funcOut, haveDbgInspect, i, localVarIdxStk, localVarStack, longPad, nameByChar, path, src, symByWord, version, withStmntStack, wordBySym, _i;
 
   version = '0.1.0';
 
-  debugCompile = true;
+  debugCompile = false;
 
-  debugRuntime = true;
+  debugRuntime = false;
 
   fs = require('fs');
 
@@ -26,7 +26,11 @@
 
   withStmntStack = [];
 
-  localVarStack = [{}];
+  localVarStack = [];
+
+  localVarIdxStk = [];
+
+  callDepth = -1;
 
   depth = 0;
 
@@ -34,8 +38,8 @@
 
   funcOut = ("\n// File " + path + " compiled by FJS version " + version + " ") + ("on " + (new Date().toString().slice(0, 21)) + "\n\n");
 
-  compileFunc = function(funcSrc, funcWordIdx, pfx) {
-    var exists, front, getFuncString, getString, localVar, localVarIndexes, localVarsArr, ltn, m, matches, out, outFunc, parseWords, sym, topIdx, varSet, w, word, wordIdx, wordRegEx, wordsInLine, _, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _o, _ref, _ref1, _ref2, _ref3;
+  compileFunc = function(funcSrc, pfx) {
+    var dpth, exists, front, getFuncString, getString, idx, localVar, localVarIndexes, localVarsArr, ltn, m, matches, out, outFunc, parseWords, rest, restEsc, sym, topIdx, varSet, w, word, wordIdx, wordRegEx, wordsInLine, wrd, _, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _o, _ref, _ref1, _ref2, _ref3, _ref4;
 
     getString = function(word, regex) {
       var chr0, chr1, delim, out, _ref;
@@ -165,32 +169,42 @@
         return funcOut += str + '\n';
       }
     };
-    outFunc = function(src, funcWordIdx, exec) {
-      var m;
+    outFunc = function(src, exec) {
+      var m, n;
 
       if (exec == null) {
         exec = true;
       }
+      n = '';
+      if ((m = /\)<(\d+)$/.exec(src))) {
+        n = '0, ' + m[1];
+      }
       if (exec) {
+        if (n) {
+          out(null, 'var fjs_argsArr = this.curFrame.stack.splice(' + n + ');');
+        } else {
+          out(null, 'var fjs_argsArr = this.curFrame.stack;');
+          out(null, 'this.curFrame.stack = [];');
+        }
         out(null, 'this.pushReturnValue( (function(){');
       } else {
         out(null, 'this.push( function(){');
       }
       depth++;
+      out('(', 'this.setArgs(arguments);');
       if ((m = /^:?\((.*)\)<?(\d+)?$/.exec(src))) {
         src = m[1];
       }
-      compileFunc(src, funcWordIdx, 'this');
+      compileFunc(src, 'this');
       depth--;
       if (exec) {
-        out('()', '} ).apply( this, this.curFrame.stack ));');
-        return out(null, 'this.curFrame.stack = [];');
+        return out('()', '} ).apply( this, fjs_argsArr ));');
       } else {
         return out(null, '} );');
       }
     };
     if (debugRuntime && !haveDbgInspect) {
-      out(null, "function fjsInspect(fjs_word) {\n" + "  while(fjs_word.length < 25) fjs_word += ' ';\n" + "  fjs_stkDmp = []; fjs_frame = this.curFrame;\n" + "  if(fjs_frame) {\n" + "    fjs_stk = fjs_frame.stack; fjs_stkLen = fjs_stk.length;\n" + "    for(fjs_i=0; fjs_i<fjs_stkLen; fjs_i++) {\n" + "      fjs_item = fjs_stk[fjs_i];\n" + "      fjs_stkDmp.push(\n" + "        fjs_item === null ? 'null' : \n" + "        typeof fjs_item == 'string'  ? '\"'+fjs_item+'\"'          : \n" + "        typeof fjs_item == 'number'  ?  fjs_item                   : \n" + "        fjs_item instanceof Function ? 'function'                  : \n" + "        fjs_item instanceof Array    ? '['+fjs_item.toString()+']' : \n" + "        fjs_item instanceof Boolean  ? fjs_item.toString()         : \n" + "        (fjs_m = /^function\\s(.*?)\\(\\s/.exec(fjs_item.constructor)) ? fjs_m[1] :\n" + "        fjs_item.toString()\n" + "      );\n" + "    }\n" + "  }\n" + "  console.log( 'dbg: ' + fjs_word, fjs_stkDmp.join(', '));\n" + "}\n");
+      out(null, "function fjsInspVal(fjs_stkDmp,fjs_item) {\n" + "   fjs_stkDmp.push(\n" + "     fjs_item === null ? 'null' : \n" + "     typeof fjs_item == 'string'  ? '\"'+fjs_item.replace(/\\s/g,' ')+'\"'          : \n" + "     typeof fjs_item == 'number'  ?  fjs_item                   : \n" + "     fjs_item instanceof Function ? 'function'                  : \n" + "     fjs_item instanceof Array    ? '['+fjs_item.toString()+']' : \n" + "     fjs_item instanceof Boolean  ? fjs_item.toString()         : \n" + "     (fjs_m = /^function\\s(.*?)\\(\\s/.exec(fjs_item.constructor)) ? fjs_m[1] :\n" + "     fjs_item.toString()\n" + "   );\n" + "}\n" + out(null, "function fjsInspect(fjs_word) {\n" + "  fjs_word = fjs_word.replace(/\\s/g,' ');" + "  while(fjs_word.length < 25) fjs_word += ' ';\n" + "  fjs_stkDmp = []; fjs_argDmp = []; fjs_frame = this.curFrame;\n" + "  if(fjs_frame) {\n" + "    fjs_stk = fjs_frame.stack; fjs_stkLen = fjs_stk.length;\n" + "    for(fjs_i=0; fjs_i<fjs_stkLen; fjs_i++)\n" + "      fjsInspVal(fjs_stkDmp,fjs_stk[fjs_i]);\n" + "    fjs_arg = fjs_frame.args; fjs_argLen = fjs_arg.length;\n" + "    for(fjs_i=0; fjs_i<fjs_argLen; fjs_i++)\n" + "      fjsInspVal(fjs_argDmp,fjs_arg[fjs_i]);\n" + "  }\n" + "  console.log( 'dbg: ' + fjs_word, '[ '+fjs_stkDmp.join(', ')+' ] /',\n" + "               '( '+fjs_argDmp.join(', ')+' )')\n" + "}\n"));
       haveDbgInspect = true;
     }
     localVarIndexes = {};
@@ -203,11 +217,19 @@
         if ((word !== '=' && word !== '>=' && word !== '<=' && word !== 'not=') && word.slice(-1) === '=' && !/\./.test(word)) {
           word = word.slice(0, -1);
           exists = false;
-          for (_k = 0, _len1 = localVarStack.length; _k < _len1; _k++) {
-            varSet = localVarStack[_k];
-            if (varSet[word]) {
-              exists = true;
-              break;
+          if (callDepth >= 0) {
+            _ref = localVarStack.slice(0, +callDepth + 1 || 9e9);
+            for (dpth = _k = 0, _len1 = _ref.length; _k < _len1; dpth = ++_k) {
+              varSet = _ref[dpth];
+              for (wrd in varSet) {
+                idx = varSet[wrd];
+                if (idx < localVarIdxStk[dpth]) {
+                  if (wrd === word) {
+                    exists = true;
+                    break;
+                  }
+                }
+              }
             }
           }
           if (!exists && !localVarIndexes[word]) {
@@ -216,7 +238,10 @@
         }
       }
     }
+    withStmntStack.push([]);
     localVarStack.push(localVarIndexes);
+    localVarIdxStk.push(-1);
+    callDepth++;
     localVarsArr = [];
     for (localVar in localVarIndexes) {
       localVarsArr.push(encodeSymbol(localVar));
@@ -230,22 +255,20 @@
     depth++;
     out(null, 'function() {');
     depth++;
-    withStmntStack.push([]);
     wordRegEx = new RegExp('(\\S+)(\\s*)', 'g');
-    wordIdx = -1;
     while ((wordsInLine = parseWords(wordRegEx)).length) {
       for (_l = 0, _len2 = wordsInLine.length; _l < _len2; _l++) {
         word = wordsInLine[_l];
-        wordIdx++;
+        localVarIdxStk[callDepth]++;
         if (debugCompile) {
-          console.log('- word:', wordIdx, word.slice(0, 61));
+          console.log('- word:', localVarIdxStk[callDepth], word.slice(0, 61));
         }
-        if ((_ref = word[0]) === '"' || _ref === "'") {
+        if ((_ref1 = word[0]) === '"' || _ref1 === "'") {
           out(word, 'this.push( ' + word + ' );');
         } else if (word[0] === "`") {
           out(word, 'this.push( ' + word.slice(1, -1) + ' );');
         } else if ((m = /^(:)?\(\s/.exec(word))) {
-          outFunc(word, wordIdx, !m[1]);
+          outFunc(word, !m[1]);
         } else if (word.slice(0, 5) === 'with:') {
           topIdx = withStmntStack.length - 1;
           sym = encodeSymbol(word.slice(5));
@@ -264,33 +287,43 @@
           out(word, 'this.pushCB(' + (debugRuntime ? 'fjsInspect' : 'null') + ');');
         } else if (word === 'wait') {
           out(word, 'this.wait();');
-          _ref1 = withStmntStack[withStmntStack.length - 1];
-          for (_m = 0, _len3 = _ref1.length; _m < _len3; _m++) {
-            i = _ref1[_m];
+          _ref2 = withStmntStack[withStmntStack.length - 1];
+          for (_m = 0, _len3 = _ref2.length; _m < _len3; _m++) {
+            i = _ref2[_m];
             depth--;
             out(null, '}');
           }
           depth--;
           out(null, '}, function() {');
           depth++;
-          _ref2 = withStmntStack[withStmntStack.length - 1];
-          for (_n = 0, _len4 = _ref2.length; _n < _len4; _n++) {
-            w = _ref2[_n];
+          _ref3 = withStmntStack[withStmntStack.length - 1];
+          for (_n = 0, _len4 = _ref3.length; _n < _len4; _n++) {
+            w = _ref3[_n];
             out(null, 'with( ' + encodeSymbol(w) + ' ) {');
             depth++;
           }
         } else if (word[0] === ':') {
-          out(word, 'this.push( "' + (word.slice(1).replace(/"/g, '\\"')) + '" );');
+          rest = word.slice(1);
+          restEsc = rest.replace(/"/g, '\\"');
+          out(word, 'this.push( typeof ' + rest + ' == "function" ? ' + rest + ' : "' + restEsc + '" );');
         } else if (word.length > 1 && word.slice(-1) === '=') {
           out(word, (sym = encodeSymbol(word.slice(0, -1))) + ' = this.pop();');
-          localVarStack.slice(-1)[0][sym] = true;
-        } else if ((m = /^(:)?\($/.exec(word))) {
-          outFunc(word, wordIdx, !m[1]);
-        } else if ((matches = /^@(\d*)$/.exec(word))) {
-          out(word, 'this.pushOuter( ' + matches[1] + ' );');
+        } else if ((matches = /^@(@|(\d*))$/.exec(word))) {
+          ltn = (function() {
+            switch (false) {
+              case !!matches[1]:
+                return 1;
+              case !matches[2]:
+                return matches[2];
+              default:
+                return '';
+            }
+          })();
+          out(word, 'this.moveArgsToStack(' + ltn + ');');
         } else if ((m = /^(\S+)<(\d*)$/.exec(word))) {
           _ = m[0], front = m[1], ltn = m[2];
-          out(word, 'this.pushArgsAndExec( ' + sym + (ltn ? ', ' + ltn : '') + ' );');
+          ltn || (ltn = 'null');
+          out(word, 'this.pushArgsAndExec( ' + encodeSymbol(front) + ', ' + ltn + ' );');
         } else if ((m = /^(\S+)\.$/.exec(word))) {
           if (!(front = m[1])) {
             out('.', 'this.execOrPush( _dot_ );');
@@ -301,7 +334,8 @@
             out(null, 'if(typeof fjs_val == "function")');
             out(null, '  fjs_val = fjs_val.apply(');
             out(null, '      fjs_ctxtObj, this.curFrame.stack );');
-            out(word, 'if(fjs_val != undefined) this.pushReturnValue(fjs_val);');
+            out(null, '  this.curFrame.stack = [];');
+            out(word, 'this.pushReturnValue(fjs_val);');
           }
         } else {
           out(word, 'this.execOrPush( ' + encodeSymbol(word) + ' );');
@@ -309,9 +343,9 @@
       }
     }
     out(')', 'this.funcReturn();');
-    _ref3 = withStmntStack[withStmntStack.length - 1];
-    for (_o = 0, _len5 = _ref3.length; _o < _len5; _o++) {
-      i = _ref3[_o];
+    _ref4 = withStmntStack[withStmntStack.length - 1];
+    for (_o = 0, _len5 = _ref4.length; _o < _len5; _o++) {
+      i = _ref4[_o];
       depth--;
       out(null, '}');
     }
@@ -321,10 +355,12 @@
     out(null, ']');
     withStmntStack.pop();
     localVarStack.pop();
+    localVarIdxStk.pop();
+    callDepth--;
     depth--;
     out(null, ');');
     if (debugCompile) {
-      return console.log('- word: ' + (wordIdx + 1) + ' )');
+      return console.log('- word: ' + (localVarIdxStk[callDepth] + 1) + ' )');
     }
   };
 
@@ -451,7 +487,7 @@
 
   src = "with:fjs-primitives  fjs-primitives=  require './fjs-primitives'\n\n" + fs.readFileSync(path + '.fjs').toString();
 
-  compileFunc(src, 0, "require('./fjs-runtime')");
+  compileFunc(src, "require('./fjs-runtime')");
 
   fs.writeFile(path + '.js', funcOut);
 

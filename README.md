@@ -149,13 +149,13 @@ So weirdly enough, when a non-FJS function executes, the inner and outer stacks 
 
 An FJS function (made with parens) operates on the local stack instead of the arguments, like all stack-based languages do. But the local stack starts off empty, so how does the FJS function get items onto its local stack?  This is accomplished by a word that pops items from the arguments and pushes them onto the local stack.
 
-The `@` word pops one item off of the `arguments` list and pushes it onto the local stack. You can use the word modifier `<n` to specify moving more than one argument. This can be used anywhere inside of a function and there can be multiple of these in a function.
+The `@` word pops one item off of the `arguments` list and pushes it onto the local stack. You can append a number, `@n`, to specify moving n arguments. The word `@@` moves all arguments to the stack.  These can be used anywhere inside of a function and there can be more than one.
 
 Because the outer stack is passed to the function as arguments and then `@` moves arguments to the inner stack, one can think of the `@` word as just moving items from the outer stack to the inner stack.
 
     ( .  @ . @ . @ )   1 2 3  // prints "1", then "2", then "3" and leaves stack empty
-    ( . Math.max @<2 ) 1 2 3  // prints "2" and leaves one item on stack
-    ( .< @< 4 )<2      1 2 3  // prints "1 2 4" and leaves one item on stack
+    ( . Math.max @2 ) 1 2 3  // prints "2" and leaves one item on stack
+    ( .< @@ 4 )<2      1 2 3  // prints "1 2 4" and leaves one item on stack
 
 Note that in the last line the `<2` modifier on the function specifies the number of outer stack items popped and passed as arguments.
 
@@ -180,7 +180,6 @@ If the function return value is an array, then all the items from the array and 
 When calling a JSF function from Javascript the return value is undefined if the stack is empty.  Otherwise the entire local stack is returned as an array.
 
     . Math.min				// prints Infinity
-    .< alert 'hi' 4			// alerts "hi" and then prints only "4"
     split. "1 2 3" ' '		// leaves three items on stack: "1", "2", "3"
 
 *Named Variable Scopes*
@@ -213,7 +212,7 @@ If there is more than one cb used before the `wait`, then execution pauses until
 If a javascript function calls the cb-generated function more than once, then execution will continue from the wait multiple times.  The context is cloned each time so the execution starts with the same continuation state.  This is a type of "forking" that allows multiple execution of FJS code.  The http server example below takes advantage of this to process one http request for each callback.
 
 
-*Primitve Words*
+*Primitive Words*
 
 Words that all FJS code needs, such as `.`, `dup`, and `drop` are defined in the fjs-primitives javascript file.  This file is included automatically in the compiled output using this code ...
 
@@ -224,7 +223,7 @@ The `with` operator allows the primitives to be used without a namespace prefix.
 
 Implementation detail:  The primitive functions get the stack in their arguments like any other function.  They then operate on the `arguments` stack-like object.  Returning `arguments` from the function then puts the remaining items back on the stack, like any other function return.
 
-*Comparisoms and Boolean Operators*
+*Comparisons and Boolean Operators*
 
 There are a set of primitives, `<`, `=`, and `>` (and others) that pop two items off the stack, compare them, and push a boolean value on the stack.  These equate to the javascript operators `<`, `===`, and `>`.
 
@@ -244,9 +243,9 @@ Boolean primitive operators, like `not`, `and`, and `or` pop two items and push 
 
 Some javascript operators cannot work on stack variables.  They must operate on the variable name.  Examples are `with`, `typeof`, and `instanceof`.  For these operators you must combine the operator and operand in one word, separated by a colon.  Note that the `with` operator is in affect until the end of the surrounding function.
 
-	obj= `{x:1}` 		    	// assign object to var obj
-    ( . x with:obj )			// prints 1 (`with` goes to end of function
-    . typeof:x  			    // prints "undefined"
+	obj= `{z:1}` 		    	// assign object to var obj
+    ( . z with:obj )			// prints 1 (`with` goes to end of function
+    . typeof:z  			    // prints "undefined"
 
 
 *Conditionals and Looping*
@@ -256,7 +255,7 @@ FJS code is conditionally executed by an `if` word that pops a truthy value (var
 There ia a convenience version of `if` called `doif` that pops the function to execute first and then the truthy value.
 
 	if ( = x 1 ) :( console.log 'x is 1' ) x= 1		// prints "x is 1"
-	if = x 1 prt1 x= 1 prt1= :( . 'x is 1' ) 		// prints "x is 1"
+	if = x 1 :prt1 x= 1 prt1= :( . 'x is 1' ) 		// prints "x is 1"
     . y if < x 3 :( y= 2 ) y= 1 x= 1				// prints "2"
     . y doif :( y= 2 ) < x 3 y= 1 x= 1				// prints "2"
 
@@ -273,11 +272,11 @@ Another looping word is called `repeat`.  It takes one function off the stack an
 
 *Arrays and Objects*
 
-An empty array or object can be created with the primitive words `[]` or `{}`.  Array and object constants can be created using javascipt code enclosed in backticks.
+An empty array or object can be created with the primitive words `[]` or `{}`.  Array and object constants can be created by using the `<n` modifier.
 
-	. []						// prints "[]"
-	. `[1, 2]`				    // prints "{ a: 1, b: 2 }"
-	. `{a:1, b:2}`				// prints "[ 1, 2 ]"
+	. []			 // prints "[]"
+	. []< 1 2		 // prints "[ 1, 2 ]"
+	. {}< :a 1 :b 2	 // prints "{ a: 1, b: 2 }"
 
 As described before, the `.` word modifier accesses an object's property with a constant name.  To access an item with a variable index, use the word `get`, which pops an integer index for an array or a string index for an object.
 
@@ -297,14 +296,11 @@ The array type supports the words `push.`, `pop.`, `shift.`, and `unshift.` like
 
 A functional style that often replaces the need for looping is to iterate a function over an array or an object.  The `map`, `reduce`, and `filter` words are good examples.  In the first line below the function is executed three times and one item of the array is passed in as an argument each time and then that item is replaced with the value squared.
 
-    map   :( * dup @ ) `[1,2,5]` 		// leaves the array  [1, 4, 25] on the stack
-	map<3 :( * dup @ ) `[1,2]` `[0,3]`	// leaves the arrays [1, 4] and [0, 9] on the stack
+    . map :( * dup @ ) `[1,2,5]`    // prints [1, 4, 25]
 
 The `each` word operates much like the `repeat` word but once for each item in an array or object. Unlike `map` it leaves nothing on the stack.  It can be aborted early by returning the exact value of `false'.  This is stolen from jQuery's `each` function.  The first argument passed into the function is the key and the second is the value.
 
-    each :( . +< '[' @ ']=' @ ) `[1, 2]`	// prints "[0]=1 [1]=2"
-
-Note that the word `+<` concatenates all strings on the right into one string.  `+< a b c` operates exactly as the javascript `a + b + c` including the rules about numeric addition versus string concatenation.
+    each :( . @ ) `[1, 2]`	   // prints "1" then "2"
 
 
 *Modules*
@@ -326,9 +322,7 @@ Modules can also be written in FJS and used in javascript.  The following exampl
 Enclosing javascript code in backticks places it into the compiled output unchanged. This copies coffeescript.  The js code must not contain any operators like `break` or `return`.  It must return a value which will be placed on the stack.
 
     . `x = 1 + 1` 		// assigns 2 to x and prints "2"
-    obj= `{a:1, b:2}` 	// assigns a constant object to the variable `obj`
-
-Note that currently the only way to create arrays and objects in FJS is to use this technique.  Primitves will be added soon to create arrays and objects.  The *Word Modifers* section details the existing `.` modifer which allows access to arrays and objects.
+    obj= `{a:1, b:2}` 	// assigns a constant object to the variable "obj"
 
 
 *Http Server*
@@ -344,9 +338,9 @@ It's time for a more complex example.  This is the Node http server example from
 
     createServer. ( require 'http' ) cb
     drop ( listen. @ 1337 '127.0.0.1' )
-    dup drop swap wait . 'Server running at http://127.0.0.1:1337/'
+    dup drop wait . 'Server running at http://127.0.0.1:1337/'
         ( writeHead. @ 200 `{'Content-Type':'text/plain'}` )
-        ( end.       @ 200 'Hello World'                   )
+        ( end.       @ 'Hello World\n'                     )
 
 Note how the flow of the FJS code matches the actual execution order, unlike the JS code with its callbacks.  The execution "pauses" at the wait command (by saving a continution and returning to the JS event loop).  Then when callbacks occur internally, execution will continue from the `wait` word.  On each new http request the `wait` command will repeat using a new context for each callback with the `request` and `result` objects on the stack.
 
